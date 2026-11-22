@@ -1,10 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSandboxWithFiles, SandboxFile, SandboxFramework, detectFrameworkFromFiles } from "@/lib/sandbox";
+import { rateLimit } from "@/lib/cache";
+import { verifySessionCookie } from "@/lib/firebase/admin";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-ip";
+    const rl = await rateLimit(`sandbox_create_${ip}`, 10, 60);
+    if (!rl.success) {
+      return NextResponse.json(
+        { success: false, error: "Sandbox creation rate limit reached. Please wait before creating another." },
+        { status: 429 }
+      );
+    }
+
+    const cookie = request.cookies.get("session")?.value;
+    const decoded = await verifySessionCookie(cookie);
+    const uid = decoded?.uid ?? null;
+
     let customFiles: SandboxFile[] | undefined = undefined;
     let framework: SandboxFramework = "vite-react";
     let requestedSandboxId: string | undefined = undefined;

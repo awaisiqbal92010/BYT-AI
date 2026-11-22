@@ -6,24 +6,21 @@ import {
   Download,
   QrCode,
   CheckCircle2,
-  ExternalLink,
   Copy,
   Check,
   ShieldCheck,
   Loader2,
-  Sparkles,
   Zap,
   Package,
   Layers,
-  ArrowRight,
-  Share2,
-  RefreshCw,
+  Monitor,
 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs } from "@/components/ui/tabs";
 import { downloadProjectAsZip } from "@/lib/export-zip";
+import { AppetizeEmulator } from "./AppetizeEmulator";
 
 interface MobileAppBuildModalProps {
   isOpen: boolean;
@@ -40,7 +37,7 @@ export function MobileAppBuildModal({
   files = [],
   previewUrl,
 }: MobileAppBuildModalProps) {
-  const [activeTab, setActiveTab] = React.useState<"apk" | "aab" | "qr" | "zip">("apk");
+  const [activeTab, setActiveTab] = React.useState<"emulator" | "apk" | "aab" | "qr" | "zip">("emulator");
   const [isBuilding, setIsBuilding] = React.useState(false);
   const [buildProgress, setBuildProgress] = React.useState(0);
   const [buildStepText, setBuildStepText] = React.useState("");
@@ -55,6 +52,7 @@ export function MobileAppBuildModal({
       : `https://byt-ai.vercel.app/download/${safeName}.apk`;
 
   const tabs = [
+    { id: "emulator", label: "Live Emulator", icon: <Monitor className="h-3.5 w-3.5" /> },
     { id: "apk", label: "Android APK", icon: <Smartphone className="h-3.5 w-3.5" /> },
     { id: "aab", label: "Play Store AAB", icon: <Package className="h-3.5 w-3.5" /> },
     { id: "qr", label: "Scan to Phone", icon: <QrCode className="h-3.5 w-3.5" /> },
@@ -90,8 +88,7 @@ export function MobileAppBuildModal({
   };
 
   const handleDownloadBinary = (ext: "apk" | "aab") => {
-    // Generate an installable standalone package file for the user's phone
-    const dummyApkContent = new Blob(
+    const dummyContent = new Blob(
       [
         JSON.stringify(
           {
@@ -110,7 +107,7 @@ export function MobileAppBuildModal({
       { type: "application/octet-stream" }
     );
 
-    const url = URL.createObjectURL(dummyApkContent);
+    const url = URL.createObjectURL(dummyContent);
     const a = document.createElement("a");
     a.href = url;
     a.download = `${safeName}-release.${ext}`;
@@ -137,18 +134,20 @@ export function MobileAppBuildModal({
     }
   };
 
-  // SVG QR Code generator for crisp mobile scanning
   const qrSvgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
     previewUrl || mobileDownloadUrl
   )}&bgcolor=ffffff&color=09090b&margin=1`;
+
+  // Wider modal when showing the Appetize emulator
+  const maxWidth = activeTab === "emulator" ? "5xl" : "lg";
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Build & Download Mobile App"
-      description="Package your React Native Expo project into an installable Android APK, Google Play AAB, or scan to test on phone."
-      maxWidth="lg"
+      title="Build & Preview Mobile App"
+      description="Test your React Native Expo project in an interactive cloud emulator, or package it as an Android APK / Play Store AAB."
+      maxWidth={maxWidth as any}
     >
       <div className="space-y-4 pt-2">
         <Tabs
@@ -162,6 +161,18 @@ export function MobileAppBuildModal({
           variant="underlined"
         />
 
+        {/* â”€â”€ Tab 0: Live Appetize Emulator â”€â”€ */}
+        {activeTab === "emulator" && (
+          <div className="pt-1" style={{ minHeight: 680 }}>
+            <AppetizeEmulator
+              projectName={projectName}
+              files={files}
+              defaultPlatform="android"
+              className="h-[660px]"
+            />
+          </div>
+        )}
+
         {/* Tab 1: Android APK */}
         {activeTab === "apk" && (
           <div className="space-y-4 pt-1">
@@ -173,7 +184,7 @@ export function MobileAppBuildModal({
                     <span>Standalone Android APK (Direct Sideload)</span>
                   </h4>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Package: com.byt.{safeName} • Target: Android 9.0+ (Universal)
+                    Package: com.byt.{safeName} â€¢ Target: Android 9.0+ (Universal)
                   </p>
                 </div>
                 <Badge variant="violet" className="text-[10px] gap-1">
@@ -208,7 +219,7 @@ export function MobileAppBuildModal({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      <span>APK Build Complete & Signed!</span>
+                      <span>APK Build Complete &amp; Signed!</span>
                     </div>
                     <Badge variant="success" className="text-[10px]">
                       {safeName}.apk (28.4 MB)
@@ -261,7 +272,7 @@ export function MobileAppBuildModal({
                     <span>Android App Bundle (Google Play Store AAB)</span>
                   </h4>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Format: .aab • Optimized dynamic delivery for Play Store Console
+                    Format: .aab â€¢ Optimized dynamic delivery for Play Store Console
                   </p>
                 </div>
                 <Badge variant="outline" className="text-[10px] gap-1">
@@ -393,8 +404,8 @@ export function MobileAppBuildModal({
               </p>
 
               <div className="rounded-lg bg-muted/40 p-3 font-mono text-[11px] text-muted-foreground space-y-1 border border-border/50">
-                <p>📦 {safeName}-expo-project.zip</p>
-                <p className="text-emerald-500">✔ Ready for EAS Build & Expo Go</p>
+                <p>ðŸ“¦ {safeName}-expo-project.zip</p>
+                <p className="text-emerald-500">âœ” Ready for EAS Build &amp; Expo Go</p>
               </div>
             </div>
 

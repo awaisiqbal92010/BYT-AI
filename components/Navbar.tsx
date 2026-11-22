@@ -27,7 +27,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Tooltip } from "@/components/ui/tooltip";
 import { Dropdown } from "@/components/ui/dropdown";
 import { CommandPalette } from "@/components/CommandPalette";
-import { createClient } from "@/lib/supabase/client";
+import { firebaseSignOut } from "@/lib/firebase";
 import { downloadProjectAsZip } from "@/lib/export-zip";
 import { getSavedProjects } from "@/lib/project-storage";
 
@@ -54,8 +54,8 @@ export function Navbar({ user }: NavbarProps) {
 
   const handleSignOut = async () => {
     try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
+      await firebaseSignOut();
+      await fetch("/api/auth/logout", { method: "POST" });
     } catch (e) {
       console.error(e);
     }

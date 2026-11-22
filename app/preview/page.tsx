@@ -436,7 +436,7 @@ export default function App() {
                 srcDoc={compiledSrcDoc}
                 title="BYT In-Browser Standalone Sandbox"
                 className="w-full h-full border-0 bg-slate-950"
-                sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                sandbox="allow-forms allow-modals allow-popups allow-presentation allow-scripts"
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-slate-400 text-sm">

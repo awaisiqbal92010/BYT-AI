@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runCommandInSandbox } from "@/lib/sandbox";
-import { createClient } from "@/lib/supabase/server";
+import { verifySessionCookie } from "@/lib/firebase/admin";
+import { rateLimit } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -21,11 +22,20 @@ const FORBIDDEN_COMMAND_PATTERNS = [
 
 export async function POST(request: NextRequest) {
   try {
-    // Authenticate optionally; guests can use isolated sandbox terminal freely
-    const supabase = createClient();
-    try {
-      await supabase.auth.getUser();
-    } catch {}
+    // 1. Rate limiting per IP to prevent command flooding / resource exhaustion
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-ip";
+    const rl = await rateLimit(`sandbox_cmd_${ip}`, 45, 60);
+    if (!rl.success) {
+      return NextResponse.json(
+        { success: false, error: "Too many commands. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
+    // 2. Authenticate session cookie cryptographically (never trust unverified client headers)
+    const cookie = request.cookies.get("session")?.value;
+    const decoded = await verifySessionCookie(cookie);
+    const uid = decoded?.uid ?? null;
 
     const body = await request.json();
     const command = body?.command;

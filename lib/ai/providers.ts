@@ -35,13 +35,14 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Prioritized list of best free OpenRouter coding & reasoning models
+ * Verified against https://openrouter.ai/models?q=free
  */
 export const BEST_FREE_CODING_MODELS = [
-  "nvidia/nemotron-3-super-120b-a12b:free", // 120B High-intelligence general reasoning & UI code
-  "cohere/north-mini-code:free",           // Specialized high-speed code generation
-  "google/gemma-4-31b-it:free",            // Google 31B instruction-tuned model
-  "minimax/minimax-m2.7:free",             // High-throughput reasoning
-  "z-ai/glm-5.2:free",                     // GLM reasoning model
+  "google/gemini-2.0-flash-exp:free",       // Google Gemini 2.0 Flash (free experimental)
+  "meta-llama/llama-3.3-70b-instruct:free", // Meta Llama 3.3 70B Instruct
+  "qwen/qwen-2.5-coder-32b-instruct:free",  // Qwen 2.5 Coder 32B — strong code model
+  "deepseek/deepseek-r1-0528:free",          // DeepSeek R1 reasoning model
+  "microsoft/phi-4-reasoning-plus:free",     // Microsoft Phi-4 Reasoning Plus
 ];
 
 /**
@@ -144,7 +145,7 @@ export async function callMistral(
     throw new ProviderError("mistral", "MISTRAL_API_KEY is not configured in .env.local", 401);
   }
 
-  const mistralModels = [options.model || "codestral-2508", "mistral-small-latest"];
+  const mistralModels = [options.model || "codestral-latest", "mistral-small-latest"];
   let lastError: ProviderError | null = null;
 
   for (const model of mistralModels) {

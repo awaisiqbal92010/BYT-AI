@@ -38,7 +38,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Tooltip } from "@/components/ui/tooltip";
 import { Dropdown } from "@/components/ui/dropdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { createClient } from "@/lib/supabase/client";
+import { firebaseSignOut } from "@/lib/firebase";
 import { getSavedProjects, SavedProject } from "@/lib/project-storage";
 
 export type WorkbenchViewMode = "preview" | "code" | "split";
@@ -136,8 +136,8 @@ export function WorkbenchHeader({
 
   const handleSignOut = async () => {
     try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
+      await firebaseSignOut();
+      await fetch("/api/auth/logout", { method: "POST" });
     } catch (e) {
       console.error(e);
     }
@@ -272,7 +272,7 @@ export function WorkbenchHeader({
                             if (onSelectProject) {
                               onSelectProject(p.id);
                             } else {
-                              router.push(`/?project=${p.id}`);
+                              router.push(`/apps/${p.id}/editor/preview`);
                             }
                           }}
                           className={`w-full text-left p-2 rounded-xl transition-all flex items-center justify-between group ${

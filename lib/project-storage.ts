@@ -1,6 +1,6 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
+// Project storage with local cache and Firestore API sync
 
 export interface ProjectFile {
   path: string;
@@ -233,46 +233,34 @@ export function getProjectById(id: string): SavedProject | null {
 }
 
 /**
- * Async fetch single project from Supabase first with local storage fallback
+ * Async fetch single project from API / Firestore first with local storage fallback
  */
 export async function fetchProjectByIdAsync(id: string): Promise<SavedProject | null> {
   try {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (user) {
-      const { data, error } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-
-      if (data && !error) {
-        // Enforce account ownership: only owner or public project can be accessed
-        if (data.user_id !== user.id && !data.is_public) {
-          throw new Error("UNAUTHORIZED_ACCESS");
-        }
-
-        const project: SavedProject = {
-          id: data.id,
-          name: data.name,
-          slug: data.slug || data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-          description: data.description || "",
-          framework: (data.framework as any) || "Next.js 14",
+    const res = await fetch(`/api/projects/${id}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.project) {
+        const p = data.project;
+        return {
+          id: p.id,
+          name: p.name,
+          slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          description: p.description || "",
+          framework: (p.framework as any) || "Next.js 14",
           status: "live",
-          deployUrl: data.preview_url,
-          updatedAt: data.updated_at || new Date().toISOString(),
-          createdAt: data.created_at || new Date().toISOString(),
-          promptSnippet: data.description || "",
+          deployUrl: p.previewUrl || p.deployUrl,
+          updatedAt: typeof p.updatedAt === "string" ? p.updatedAt : new Date().toISOString(),
+          createdAt: typeof p.createdAt === "string" ? p.createdAt : new Date().toISOString(),
+          promptSnippet: p.description || "",
           gradient: "from-violet-600/20 via-indigo-600/10 to-transparent",
-          files: data.files || [],
-          messages: data.messages || [],
-          is_public: data.is_public,
+          files: p.files || [],
+          messages: p.messages || [],
+          is_public: p.isPublic ?? p.is_public,
         };
-        return project;
       }
+    } else if (res.status === 403) {
+      throw new Error("UNAUTHORIZED_ACCESS");
     }
   } catch (e: any) {
     if (e?.message === "UNAUTHORIZED_ACCESS") {
@@ -284,7 +272,7 @@ export async function fetchProjectByIdAsync(id: string): Promise<SavedProject | 
 }
 
 /**
- * Saves or updates a project both in localStorage and in Supabase
+ * Saves or updates a project both in localStorage and in Firestore via /api/projects
  */
 export async function saveProject(
   projectData: Partial<SavedProject> & { id: string; name: string }
@@ -339,37 +327,34 @@ export async function saveProject(
     }
   }
 
-  // Sync to Supabase if authenticated
-  try {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (user) {
-      await supabase.from("projects").upsert({
-        id: updatedProject.id,
-        user_id: user.id,
-        name: updatedProject.name,
-        slug: updatedProject.slug,
-        framework: updatedProject.framework,
-        description: updatedProject.description,
-        files: updatedProject.files,
-        messages: updatedProject.messages,
-        preview_url: updatedProject.e2bPreviewUrl || updatedProject.deployUrl || null,
-        is_public: Boolean(updatedProject.is_public),
-        updated_at: now,
-      });
+  // Sync to Firestore via /api/projects
+  if (typeof window !== "undefined") {
+    try {
+      fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: updatedProject.id,
+          name: updatedProject.name,
+          slug: updatedProject.slug,
+          framework: updatedProject.framework,
+          description: updatedProject.description,
+          files: updatedProject.files,
+          messages: updatedProject.messages,
+          preview_url: updatedProject.e2bPreviewUrl || updatedProject.deployUrl || null,
+          is_public: Boolean(updatedProject.is_public),
+        }),
+      }).catch(() => {});
+    } catch (e) {
+      // Graceful offline/local fallback
     }
-  } catch (e) {
-    // Graceful offline/local fallback
   }
 
   return updatedProject;
 }
 
 /**
- * Deletes a project by ID from localStorage and Supabase
+ * Deletes a project by ID from localStorage and Firestore via API
  */
 export async function deleteProject(id: string): Promise<void> {
   const currentProjects = getSavedProjects();
@@ -379,18 +364,38 @@ export async function deleteProject(id: string): Promise<void> {
     window.dispatchEvent(new CustomEvent("byt_projects_updated", { detail: { deletedId: id } }));
   }
 
-  try {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (user) {
-      await supabase.from("projects").delete().eq("id", id).eq("user_id", user.id);
+  if (typeof window !== "undefined") {
+    try {
+      fetch(`/api/projects/${id}`, { method: "DELETE" }).catch(() => {});
+    } catch (e) {
+      // Ignore offline errors
     }
-  } catch (e) {
-    // Ignore offline errors
   }
+}
+
+/**
+ * Generates a clean 24-character hexadecimal unique project ID (e.g. 6a71c49df3e1253811f86cd0)
+ */
+export function generateProjectId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    const bytes = new Uint8Array(12);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+  // Universal fallback: 24 hex characters
+  return (
+    Math.random().toString(16).substring(2, 14) +
+    Math.random().toString(16).substring(2, 14)
+  ).padEnd(24, "0").slice(0, 24);
+}
+
+/**
+ * Returns compact, clean URL for editor preview or code view
+ */
+export function getAppEditorUrl(id: string, view: "preview" | "code" = "preview"): string {
+  return `/apps/${id}/editor/${view}`;
 }
 
 /**
@@ -400,7 +405,7 @@ export async function duplicateProject(id: string): Promise<SavedProject | null>
   const source = getProjectById(id);
   if (!source) return null;
 
-  const newId = `proj-${Date.now()}`;
+  const newId = generateProjectId();
   const newName = `${source.name} (Copy)`;
 
   return await saveProject({
@@ -410,3 +415,4 @@ export async function duplicateProject(id: string): Promise<SavedProject | null>
     slug: `${source.slug}-copy`,
   });
 }
+

@@ -104,7 +104,7 @@ export default function PrivacyPolicyPage() {
             <p>We share your information only in these circumstances:</p>
             <ul>
               <li>
-                <strong>Service providers:</strong> Supabase (database & auth), Vercel (hosting), E2B (sandbox compute),
+                <strong>Service providers:</strong> Google Firebase (database, Firestore & auth), Vercel (hosting), E2B (sandbox compute),
                 OpenRouter / Mistral AI (code generation inference) — each bound by data processing agreements
               </li>
               <li><strong>Google Analytics:</strong> Anonymized usage data for platform analytics</li>

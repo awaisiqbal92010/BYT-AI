@@ -15,7 +15,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { ExecutionStep } from "@/components/builder/ActivityStreamer";
 import { IdeaPromptHero } from "@/components/builder/IdeaPromptHero";
 import { WorkbenchUserData } from "@/components/builder/WorkbenchHeader";
-import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/firebase/auth-context";
 import { AuthRequiredModal } from "@/components/builder/AuthRequiredModal";
 import { StitchKeyModal } from "@/components/builder/StitchKeyModal";
 import {
@@ -24,6 +24,7 @@ import {
   getProjectById,
   saveProject,
   duplicateProject,
+  generateProjectId,
 } from "@/lib/project-storage";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MobileAppBuildModal } from "@/components/builder/MobileAppBuildModal";
@@ -90,22 +91,32 @@ export default function BuilderPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Redirect ?project=xyz or ?prompt=xyz to /project/xyz
+  // Redirect ?project=xyz or ?prompt=xyz to /apps/xyz/editor/preview
   React.useEffect(() => {
     const proj = searchParams.get("project");
     if (proj) {
-      router.push(`/project/${proj}`);
+      router.push(`/apps/${proj}/editor/preview`);
       return;
     }
     const prompt = searchParams.get("prompt");
     if (prompt) {
-      const newId = `proj-${Date.now()}`;
+      const newId = generateProjectId();
       const fw = searchParams.get("framework") || "Vite + React";
-      router.push(`/project/${newId}?prompt=${encodeURIComponent(prompt)}&framework=${encodeURIComponent(fw)}`);
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem(
+            "byt_pending_build",
+            JSON.stringify({ prompt, framework: fw, projectId: newId })
+          );
+        } catch (e) {
+          console.warn("sessionStorage error", e);
+        }
+      }
+      router.push(`/apps/${newId}/editor/preview`);
     }
   }, [searchParams, router]);
 
-  const [currentProjectId, setCurrentProjectId] = React.useState<string>(() => `proj-${Date.now()}`);
+  const [currentProjectId, setCurrentProjectId] = React.useState<string>(() => generateProjectId());
   const [hasStartedProject, setHasStartedProject] = React.useState(false);
   const [projectName, setProjectName] = React.useState("My New Website");
   const [framework, setFramework] = React.useState<"Next.js 14" | "Vite + React" | "React Native Expo">("Vite + React");
@@ -261,43 +272,25 @@ export default function BuilderPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleSaveProject]);
 
+  const { user: authUser } = useAuth();
+
   // Load user data
   React.useEffect(() => {
-    async function loadUser() {
-      try {
-        const supabase = createClient();
-        const {
-          data: { user: authUser },
-        } = await supabase.auth.getUser();
-
-        if (authUser) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", authUser.id)
-            .single();
-
-          setUser({
-            id: authUser.id,
-            email: authUser.email,
-            github_username:
-              profile?.github_username ||
-              authUser.user_metadata?.user_name ||
-              authUser.user_metadata?.preferred_username ||
-              authUser.email?.split("@")[0],
-            avatar_url:
-              profile?.avatar_url ||
-              authUser.user_metadata?.avatar_url,
-            plan: profile?.plan || "free",
-          });
-        }
-      } catch (err) {
-        console.warn("Failed to load user profile in WorkbenchHeader:", err);
-      }
+    if (authUser) {
+      setUser({
+        id: authUser.uid,
+        email: authUser.email || undefined,
+        github_username:
+          authUser.displayName ||
+          authUser.email?.split("@")[0] ||
+          "Muhammad Iqbal",
+        avatar_url: authUser.photoURL || undefined,
+        plan: "free",
+      });
+    } else {
+      setUser(undefined);
     }
-
-    loadUser();
-  }, []);
+  }, [authUser]);
 
   // Duplicate current project
   const handleDuplicateProject = async () => {
@@ -567,14 +560,36 @@ export default function BuilderPage() {
     }
   };
 
-  const handleStartFromHero = (prompt: string) => {
-    const newId = `proj-${Date.now()}`;
-    router.push(`/project/${newId}?prompt=${encodeURIComponent(prompt)}`);
+  const handleStartFromHero = (
+    prompt: string,
+    selectedFw?: "Vite + React" | "Next.js 14" | "React Native Expo"
+  ) => {
+    const fw = selectedFw || framework || "Vite + React";
+    const newId = generateProjectId();
+    const targetUrl = `/apps/${newId}/editor/preview`;
+
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem(
+          "byt_pending_build",
+          JSON.stringify({ prompt, framework: fw, projectId: newId })
+        );
+      } catch (e) {
+        console.warn("Failed to store pending build in sessionStorage", e);
+      }
+    }
+
+    if (!authUser) {
+      router.push(`/login?next=${encodeURIComponent(targetUrl)}`);
+      return;
+    }
+
+    router.push(targetUrl);
   };
 
   const handleNewProject = () => {
-    const newId = `proj-${Date.now()}`;
-    router.push(`/project/${newId}`);
+    const newId = generateProjectId();
+    router.push(`/apps/${newId}/editor/preview`);
   };
 
   const handleInspectElement = (elementName: string, description: string) => {
@@ -589,7 +604,7 @@ export default function BuilderPage() {
           onStartBuild={handleStartFromHero}
           isGenerating={isGenerating}
           onOpenRecentProject={(proj) => {
-            router.push(`/project/${proj.id}`);
+            router.push(`/apps/${proj.id}/editor/preview`);
           }}
         />
         <AuthRequiredModal

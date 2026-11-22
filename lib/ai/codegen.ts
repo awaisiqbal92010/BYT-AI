@@ -2,9 +2,18 @@ import { callMistral, callOpenRouter, Message, ProviderError } from "./providers
 import { BuildPlan, FilePlan } from "./orchestrator";
 
 function getCodegenSystemPrompt(framework: string = "vite-react", filePath: string = ""): string {
+  const ANTI_AI_SLOP_GUIDELINES = `
+ANTI-AI-SLOP DESIGN & ENGINEERING PRINCIPLES (MANDATORY):
+- NO GENERIC AI TROPES: Avoid cliché oversaturated neon-purple gradients everywhere. Use refined, elegant color palettes (dark zinc/slate tones, clean borders 'border-border/70', subtle brand accents).
+- NO FAKE PLACEHOLDERS: NEVER write 'Lorem ipsum', 'Sample description', or placeholder text. Write realistic, domain-rich content and meaningful metric values.
+- REAL FUNCTIONAL INTERACTIVITY: Buttons must actually do something (toggle state, filter items, calculate totals, open drawers, copy text).
+- AUTHENTIC TYPOGRAPHY & CONTRAST: Ensure readable typography with proper tracking and line height. All text must pass WCAG contrast standards.`;
+
   if (framework === "react-native-expo") {
     return `You are a World-Class Senior React Native & Expo Mobile Engineer.
 Your task is to write complete, production-ready code for a file in a React Native Expo (SDK 51) project.
+
+${ANTI_AI_SLOP_GUIDELINES}
 
 CRITICAL INSTRUCTIONS:
 1. Return ONLY the raw file content. DO NOT wrap in markdown code fences like \`\`\`tsx or \`\`\`jsx.
@@ -21,6 +30,8 @@ CRITICAL INSTRUCTIONS:
     return `You are a World-Class Senior Full-Stack Next.js Engineer.
 Your task is to write complete, production-ready code for a file in a Next.js 14 App Router project with Tailwind CSS.
 
+${ANTI_AI_SLOP_GUIDELINES}
+
 CRITICAL INSTRUCTIONS:
 1. Return ONLY the raw file content. DO NOT wrap in markdown code fences like \`\`\`tsx or \`\`\`jsx.
 2. DO NOT write explanations, greetings, or conversational notes.
@@ -33,6 +44,8 @@ CRITICAL INSTRUCTIONS:
 
   return `You are a World-Class Senior Frontend Engineer.
 Your task is to write the complete, functional, production-ready code for a single file in a Vite + React + Tailwind CSS project.
+
+${ANTI_AI_SLOP_GUIDELINES}
 
 CRITICAL INSTRUCTIONS:
 1. Return ONLY the raw file content. DO NOT wrap in markdown code fences like \`\`\`jsx or \`\`\`tsx.

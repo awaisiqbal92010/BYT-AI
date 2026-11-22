@@ -16,6 +16,7 @@ import {
   Search,
   CheckCheck,
   Code,
+  Eye,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -40,6 +41,7 @@ interface CodeEditorViewProps {
   onFormatCode?: () => void;
   onResetCode?: () => void;
   onDownloadZip?: () => void;
+  onSwitchToPreview?: () => void;
 }
 
 export function CodeEditorView({
@@ -53,6 +55,7 @@ export function CodeEditorView({
   onFormatCode,
   onResetCode,
   onDownloadZip,
+  onSwitchToPreview,
 }: CodeEditorViewProps) {
   const [copied, setCopied] = React.useState(false);
   const [wordWrap, setWordWrap] = React.useState(true);
@@ -236,6 +239,18 @@ export function CodeEditorView({
               >
                 <Layers className="h-3.5 w-3.5" />
                 <span>Export ZIP</span>
+              </button>
+            </Tooltip>
+          )}
+
+          {onSwitchToPreview && (
+            <Tooltip content="Toggle to Live Preview (Hotkey: 1 / Ctrl+P)">
+              <button
+                onClick={onSwitchToPreview}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-sans font-semibold text-primary bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-all shadow-2xs"
+              >
+                <Eye className="h-3.5 w-3.5" />
+                <span>Preview</span>
               </button>
             </Tooltip>
           )}

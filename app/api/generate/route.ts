@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminDb, verifySessionCookie } from "@/lib/firebase/admin";
+import { FieldValue } from "firebase-admin/firestore";
+import { randomBytes } from "crypto";
 import { planProject, BuildPlan, ProjectFile } from "@/lib/ai/orchestrator";
 import { generateFileContent } from "@/lib/ai/codegen";
 import { attemptFix } from "@/lib/ai/debugger";
@@ -24,6 +26,7 @@ export async function POST(request: NextRequest) {
   try {
     const {
       prompt,
+      projectId: requestedProjectId,
       sandboxId: requestedSandboxId,
       stitchApiKey,
       useStitch,
@@ -58,39 +61,47 @@ export async function POST(request: NextRequest) {
 
     const devPort = getPortForFramework(framework);
 
-    // 1. Initialize Supabase Client
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // 1. Resolve authenticated user from verified Firebase session cookie
+    const sessionCookie = request.cookies.get("session")?.value;
+    const decoded = await verifySessionCookie(sessionCookie);
+    const uid = decoded?.uid ?? null;
 
     const currentPeriod = new Date().toISOString().slice(0, 7);
 
-    // 2. Check Monthly Generation Limit if authenticated
-    if (user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("plan")
-        .eq("id", user.id)
-        .single();
+    // 2. Check Generation Quota
+    if (uid) {
+      try {
+        const db = getAdminDb();
+        const userDoc = await db.collection("users").doc(uid).get();
+        const userPlan: string = userDoc.data()?.plan || "free";
+        const LIMITS: Record<string, number> = { free: 50, medium: 200, premium: 1000, legendary: 99999 };
+        const limit = LIMITS[userPlan] ?? 50;
 
-      const userPlan = profile?.plan || "free";
-      const limit = userPlan === "pro" ? 1000 : userPlan === "enterprise" ? 10000 : 50;
+        const usageDoc = await db
+          .collection("usage")
+          .doc(uid)
+          .collection("months")
+          .doc(currentPeriod)
+          .get();
+        const currentCount: number = usageDoc.data()?.promptCount || 0;
 
-      const { data: usage } = await supabase
-        .from("usage_logs")
-        .select("prompt_count")
-        .eq("user_id", user.id)
-        .eq("period", currentPeriod)
-        .single();
-
-      const currentCount = usage?.prompt_count || 0;
-
-      if (currentCount >= limit) {
+        if (currentCount >= limit) {
+          return NextResponse.json(
+            { error: `Monthly generation limit reached (${currentCount}/${limit}). Upgrade your plan in Settings.` },
+            { status: 429 }
+          );
+        }
+      } catch (limitErr) {
+        console.warn("[Generate] Quota check warning:", limitErr);
+      }
+    } else {
+      // Guest IP-based rate limiting (prevents anonymous quota bypass)
+      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "guest";
+      const { rateLimit } = await import("@/lib/cache");
+      const rl = await rateLimit(`guest_gen_${ip}`, 8, 3600);
+      if (!rl.success) {
         return NextResponse.json(
-          {
-            error: `Monthly generation limit reached (${currentCount}/${limit}). Please upgrade your plan in Settings.`,
-          },
+          { error: "Guest generation limit reached. Please sign in or create a free account to continue." },
           { status: 429 }
         );
       }
@@ -126,7 +137,7 @@ export async function POST(request: NextRequest) {
         try {
           safeEnqueue({
             type: "thinking",
-            thought: `🤔 Analyzing prompt requirements for ${framework.toUpperCase()} architecture...`,
+            thought: `🧠 [COGNITIVE SPEC ANALYSIS] Parsing user intent and architecting modular ${framework.toUpperCase()} application...`,
           });
 
           // Provision or reconnect E2B MicroVM Sandbox
@@ -135,7 +146,7 @@ export async function POST(request: NextRequest) {
             if (sandboxEntry) {
               safeEnqueue({
                 type: "thinking",
-                thought: `⚡ E2B MicroVM active (ID: ${sandboxEntry.sandboxId.slice(0, 8)}). Configured for ${framework} on port ${devPort}.`,
+                thought: `⚡ [CLOUD CONTAINER RUNTIME] E2B MicroVM active (Sandbox: ${sandboxEntry.sandboxId.slice(0, 10)}). Isolated port: ${devPort}.`,
               });
               safeEnqueue({
                 type: "command",
@@ -148,14 +159,14 @@ export async function POST(request: NextRequest) {
             console.warn("[E2B Sandbox Warning]:", e2bErr);
             safeEnqueue({
               type: "thinking",
-              thought: "🌐 Operating with instant same-origin in-browser preview runner.",
+              thought: "🌐 [LOCAL RUNTIME] Booting instant in-browser live execution environment with high-speed compilation.",
             });
           }
 
           if (stitchApiKey || useStitch) {
             safeEnqueue({
               type: "thinking",
-              thought: "🎨 Querying Stitch MCP UI design engine: generating color palette, layout tokens, and wireframe blueprint...",
+              thought: "🎨 [DESIGN SYSTEM & TOKENS] Synthesizing Stitch MCP UI tokens, responsive layouts, and Tailwind color curves...",
             });
           }
 
@@ -174,13 +185,13 @@ export async function POST(request: NextRequest) {
           if (plan.stitchBlueprint) {
             safeEnqueue({
               type: "thinking",
-              thought: `✨ Stitch design ready: Layout '${plan.stitchBlueprint.layoutType}' with ${plan.stitchBlueprint.sections.length} structured sections.`,
+              thought: `✨ [BLUEPRINT GENERATION] Stitch layout '${plan.stitchBlueprint.layoutType}' generated with ${plan.stitchBlueprint.sections.length} core interactive sections.`,
             });
           }
 
           safeEnqueue({
             type: "thinking",
-            thought: `📐 Architecture finalized: ${plan.projectName} (${framework}) with ${plan.files.length} module files.`,
+            thought: `📐 [ARCHITECTURAL DECOMPOSITION] Planned ${plan.files.length} production modules for ${plan.projectName}. Initializing codegen sub-agents...`,
           });
 
           safeEnqueue({
@@ -197,7 +208,7 @@ export async function POST(request: NextRequest) {
 
             safeEnqueue({
               type: "thinking",
-              thought: `⚡ Generating ${file.path} (${file.purpose})...`,
+              thought: `⚡ [AST CODE SYNTHESIS] Synthesizing ${file.path} — ${file.purpose}...`,
             });
 
             safeEnqueue({
@@ -281,54 +292,100 @@ export async function POST(request: NextRequest) {
               console.warn("[Sandbox Boot Warning]:", sandboxBootErr);
               safeEnqueue({
                 type: "thinking",
-                thought: `⚠️ Sandbox boot notice: ${sandboxBootErr?.message?.slice(0, 80)}. Falling back to high-speed in-browser preview.`,
+                thought: `🛠️ [AUTO-DEBUGGER] Analyzing compilation/dev-server diagnostic logs...`,
               });
-              livePreviewUrl = sandboxEntry.previewUrl;
+
+              try {
+                const fixResult = await attemptFix(
+                  generatedFiles,
+                  sandboxBootErr?.message || "Dev server startup error",
+                  plan
+                );
+                if (fixResult.fixes && fixResult.fixes.length > 0) {
+                  for (const fix of fixResult.fixes) {
+                    const idx = generatedFiles.findIndex((f) => f.path === fix.path);
+                    if (idx >= 0) {
+                      generatedFiles[idx].content = fix.content;
+                    }
+                    if (sandboxEntry) {
+                      await sandboxEntry.sandbox.files.write(
+                        `${PROJECT_DIR}/${fix.path}`,
+                        fix.content
+                      );
+                    }
+                    safeEnqueue({
+                      type: "file",
+                      path: fix.path,
+                      content: fix.content,
+                      purpose: "Self-healed by auto-debugger agent",
+                    });
+                  }
+
+                  safeEnqueue({
+                    type: "thinking",
+                    thought: `✨ [AUTO-DEBUGGER] Applied ${fixResult.fixes.length} targeted repairs. Rebooting dev server...`,
+                  });
+
+                  livePreviewUrl = await bootSandboxDevServer(
+                    sandboxEntry,
+                    generatedFiles.map((f) => ({ path: f.path, content: f.content })),
+                    framework
+                  );
+                } else {
+                  livePreviewUrl = sandboxEntry.previewUrl;
+                }
+              } catch (debugErr) {
+                console.warn("[Auto-debugger attempt warning]:", debugErr);
+                safeEnqueue({
+                  type: "thinking",
+                  thought: `⚠️ Sandbox dev server boot notice: ${sandboxBootErr?.message?.slice(0, 80)}. Falling back to in-browser preview runtime.`,
+                });
+                livePreviewUrl = sandboxEntry.previewUrl;
+              }
             }
           }
 
-          // 7. Save to database
-          let projectId = `proj-${Date.now()}`;
-          if (user) {
+          // 7. Save project to Firestore (enforcing ownership verification to prevent IDOR overwrite)
+          let projectId = requestedProjectId || randomBytes(12).toString("hex");
+          if (uid) {
             try {
-              const { data: insertedProject } = await supabase
-                .from("projects")
-                .insert({
-                  user_id: user.id,
-                  name: plan.projectName,
-                  files: generatedFiles,
-                  preview_url: livePreviewUrl,
-                })
-                .select("id")
-                .single();
+              const db = getAdminDb();
+              const now = FieldValue.serverTimestamp();
+              const docRef = db.collection("projects").doc(projectId);
+              const existingDoc = await docRef.get();
 
-              if (insertedProject?.id) {
-                projectId = insertedProject.id;
+              // Prevent overwriting someone else's project
+              if (existingDoc.exists && existingDoc.data()?.userId !== uid) {
+                projectId = randomBytes(12).toString("hex");
               }
 
-              // 8. Increment usage count
-              const { data: existingUsage } = await supabase
-                .from("usage_logs")
-                .select("prompt_count")
-                .eq("user_id", user.id)
-                .eq("period", currentPeriod)
-                .single();
+              const newRef = db.collection("projects").doc(projectId);
+              await newRef.set({
+                userId: uid,
+                name: plan.projectName,
+                slug: plan.projectName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+                description: plan.description || "",
+                framework,
+                files: generatedFiles,
+                messages: [],
+                previewUrl: livePreviewUrl || null,
+                isPublic: false,
+                createdAt: existingDoc.exists ? existingDoc.data()?.createdAt : now,
+                updatedAt: now,
+              });
 
-              if (existingUsage) {
-                await supabase
-                  .from("usage_logs")
-                  .update({ prompt_count: existingUsage.prompt_count + 1 })
-                  .eq("user_id", user.id)
-                  .eq("period", currentPeriod);
-              } else {
-                await supabase.from("usage_logs").insert({
-                  user_id: user.id,
-                  period: currentPeriod,
-                  prompt_count: 1,
-                });
-              }
+              // 8. Increment monthly usage count
+              const usageRef = db
+                .collection("usage")
+                .doc(uid)
+                .collection("months")
+                .doc(currentPeriod);
+              await usageRef.set(
+                { promptCount: FieldValue.increment(1), updatedAt: now },
+                { merge: true }
+              );
             } catch (dbErr) {
-              console.warn("DB persistence warning:", dbErr);
+              console.warn("[Generate] Firestore persistence warning:", dbErr);
             }
           }
 

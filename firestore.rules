@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // User profile document: users cannot self-escalate plan or role
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId
+                    && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['plan', 'role']));
+      allow create: if request.auth != null && request.auth.uid == userId
+                    && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.plan == 'free');
+    }
+
+    // Projects collection
+    match /projects/{projectId} {
+      // Any authenticated user can create their own project
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+
+      // Project owner or public project can be read
+      allow read: if resource.data.isPublic == true ||
+                     (request.auth != null && resource.data.userId == request.auth.uid);
+
+      // Only owner can update or delete
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Usage logs
+    match /usage/{userId}/months/{monthId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false; // Mutations happen via server Admin SDK only
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

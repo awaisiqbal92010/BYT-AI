@@ -1,55 +1,49 @@
 import * as React from "react";
+import { cookies } from "next/headers";
 import { Navbar, UserData } from "@/components/Navbar";
-import { createClient } from "@/lib/supabase/server";
-import { Profile } from "@/lib/supabase/types";
+import { getAdminDb, verifySessionCookie } from "@/lib/firebase/admin";
+import { FirestoreUser } from "@/lib/firebase/types";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createClient();
-  let user = null;
-  let profile: Profile | null = null;
+  // SECURITY: Only trust server-verified session cookie — never client-supplied headers
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get("session")?.value;
+  const decoded = await verifySessionCookie(sessionCookie);
+  const uid: string | null = decoded?.uid ?? null;
 
-  try {
-    const {
-      data: { user: authUser },
-    } = await supabase.auth.getUser();
+  let profile: FirestoreUser | null = null;
 
-    user = authUser;
-
-    if (authUser) {
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", authUser.id)
-        .single();
-      profile = profileData as Profile | null;
+  if (uid) {
+    try {
+      const db = getAdminDb();
+      const userDoc = await db.collection("users").doc(uid).get();
+      if (userDoc.exists) {
+        profile = userDoc.data() as FirestoreUser;
+      }
+    } catch {
+      // Graceful fallback for local development or disconnected state
     }
-  } catch {
-    // Graceful fallback for local development or disconnected state
   }
 
   const userData: UserData = {
-    id: user?.id || "local-user",
-    email: user?.email || "developer@forge.site",
+    id: uid || "local-user",
+    email: profile?.email || "developer@byt.site",
     github_username:
-      profile?.github_username ||
-      user?.user_metadata?.user_name ||
-      user?.user_metadata?.preferred_username ||
-      user?.user_metadata?.name ||
+      profile?.displayName ||
+      profile?.githubUsername ||
+      profile?.email?.split("@")[0] ||
       "Muhammad Iqbal",
-    avatar_url:
-      user?.user_metadata?.avatar_url ||
-      user?.user_metadata?.picture ||
-      undefined,
+    avatar_url: profile?.photoURL || undefined,
     plan: profile?.plan || "free",
   };
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
-      {/* Top Navigation Bar with Real Supabase User Data */}
+      {/* Top Navigation Bar with Real Firebase User Data */}
       <Navbar user={userData} />
 
       {/* Main Workspace Area */}

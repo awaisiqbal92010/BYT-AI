@@ -32,14 +32,16 @@ const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.REDIS_RE
 const isRedisConfigured = Boolean(REDIS_URL && REDIS_TOKEN);
 
 async function redisCommand<T = any>(command: string, ...args: (string | number)[]): Promise<T | null> {
-  if (!isRedisConfigured) return null;
+  if (!isRedisConfigured || !REDIS_URL || !REDIS_TOKEN) return null;
 
   try {
-    const url = `${REDIS_URL}/${[command, ...args.map(encodeURIComponent)].join("/")}`;
-    const res = await fetch(url, {
+    const res = await fetch(REDIS_URL, {
+      method: "POST",
       headers: {
         Authorization: `Bearer ${REDIS_TOKEN}`,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify([command, ...args]),
       cache: "no-store",
     });
 

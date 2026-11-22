@@ -3,10 +3,10 @@ import { cookies } from "next/headers";
 
 /**
  * Creates a Supabase client for use in Server Components, Route Handlers,
- * and Server Actions in the Next.js App Router.
+ * and Server Actions in the Next.js App Router (Next.js 15/16 async cookies).
  */
-export function createClient() {
-  const cookieStore = cookies();
+export async function createClient() {
+  const cookieStore = await cookies();
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
   const supabaseAnonKey =

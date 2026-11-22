@@ -1,6 +1,8 @@
 import { callOpenRouter, callMistral, Message, ProviderError } from "./providers";
 import { generateStitchBlueprint, buildStitchDesignInstructions, StitchUIBlueprint } from "../mcp/stitch";
 import { SandboxFramework } from "../sandbox";
+import { matchSkillsForPrompt } from "./skills-registry";
+import { detectDomainFromPrompt, PRELOADED_DOMAINS } from "../entities";
 
 export interface FilePlan {
   path: string;
@@ -201,6 +203,21 @@ export async function generatePlan(
     } catch (e) {
       console.warn("[Stitch MCP Warning]:", e);
     }
+  }
+
+  // Inject matched architecture & design skills
+  const matchedSkills = matchSkillsForPrompt(userPrompt);
+  if (matchedSkills.length > 0) {
+    enhancedPrompt += `\n\n### ACTIVE ENTERPRISE ARCHITECTURE SKILLS:\n` +
+      matchedSkills.map((s) => `- **${s.name}**: ${s.description}`).join("\n");
+  }
+
+  // Inject pre-loaded database & domain entities (Base44 style)
+  const detectedDomain = detectDomainFromPrompt(userPrompt);
+  if (detectedDomain && PRELOADED_DOMAINS[detectedDomain]) {
+    const domainInfo = PRELOADED_DOMAINS[detectedDomain];
+    enhancedPrompt += `\n\n### PRE-LOADED DATABASE & ENTITY SCHEMA AVAILABLE (${domainInfo.name}):\n` +
+      `Entities available: ${Object.keys(domainInfo.entities).join(", ")}. Include mock entity datasets in src/data/mock-db.json or database seeds so the application has rich data immediately.`;
   }
 
   const systemPrompt = getSystemPromptForFramework(framework);

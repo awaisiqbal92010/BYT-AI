@@ -31,6 +31,7 @@ import {
   saveProject,
   deleteProject,
   duplicateProject,
+  generateProjectId,
   SavedProject,
   DEFAULT_PROJECTS,
 } from "@/lib/project-storage";
@@ -159,7 +160,7 @@ export default function ProjectsPage() {
     const finalName = (overrideName || newProjectName || "AI Web App").trim();
     const finalPrompt = (overridePrompt !== undefined ? overridePrompt : newProjectPrompt).trim();
     if (!finalName) return;
-    const newProjId = `proj-${Date.now()}`;
+    const newProjId = generateProjectId();
     await saveProject({
       id: newProjId,
       name: finalName,
@@ -178,11 +179,17 @@ export default function ProjectsPage() {
     setIsNewProjectModalOpen(false);
     setNewProjectName("");
     setNewProjectPrompt("");
-    if (finalPrompt) {
-      router.push(`/project/${newProjId}?prompt=${encodeURIComponent(finalPrompt)}`);
-    } else {
-      router.push(`/project/${newProjId}`);
+    if (finalPrompt && typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem(
+          "byt_pending_build",
+          JSON.stringify({ prompt: finalPrompt, framework: newProjectFramework, projectId: newProjId })
+        );
+      } catch (e) {
+        console.warn("sessionStorage write error", e);
+      }
     }
+    router.push(`/apps/${newProjId}/editor/preview`);
   };
 
   const handleDuplicate = async (id: string) => {
@@ -414,7 +421,7 @@ export default function ProjectsPage() {
               {/* Content */}
               <CardHeader className="p-4 pb-2">
                 <div className="flex items-center justify-between">
-                  <Link href={`/project/${project.id}`} className="hover:underline">
+                  <Link href={`/apps/${project.id}/editor/preview`} className="hover:underline">
                     <CardTitle className="text-sm font-semibold group-hover:text-primary transition-colors">
                       {project.name}
                     </CardTitle>
@@ -455,7 +462,7 @@ export default function ProjectsPage() {
                     variant="secondary"
                     size="sm"
                     className="h-7 text-xs px-2.5"
-                    onClick={() => router.push(`/?project=${project.id}`)}
+                    onClick={() => router.push(`/apps/${project.id}/editor/preview`)}
                   >
                     <span>Edit</span>
                     <ArrowUpRight className="h-3 w-3 ml-1" />

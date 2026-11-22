@@ -44,6 +44,16 @@ export function ActivityStreamer({
   const [isThinkingExpanded, setIsThinkingExpanded] = React.useState(true);
   const [activeLogTab, setActiveLogTab] = React.useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = React.useState(0);
+  const [copiedThoughts, setCopiedThoughts] = React.useState(false);
+
+  const handleCopyThoughts = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (agentThoughts.length > 0) {
+      navigator.clipboard.writeText(agentThoughts.join("\n"));
+      setCopiedThoughts(true);
+      setTimeout(() => setCopiedThoughts(false), 2000);
+    }
+  };
 
   // Timer while generating
   React.useEffect(() => {
@@ -60,56 +70,100 @@ export function ActivityStreamer({
 
   return (
     <div className="rounded-xl border border-border/80 bg-card/85 backdrop-blur-md overflow-hidden shadow-sm transition-all space-y-2 p-2">
-      {/* 1. AGENT THINKING & REASONING PANEL */}
+      {/* 1. STATE-OF-THE-ART COGNITIVE REASONING & THINKING PANEL */}
       {(isGenerating || agentThoughts.length > 0) && (
-        <div className="rounded-lg border border-purple-500/30 bg-purple-950/20 overflow-hidden shadow-xs">
+        <div className="rounded-xl border border-purple-500/40 bg-gradient-to-b from-purple-950/30 via-zinc-950/80 to-black/90 overflow-hidden shadow-lg backdrop-blur-md transition-all">
           <div
             onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
-            className="flex items-center justify-between px-3 py-2 bg-purple-900/20 hover:bg-purple-900/30 cursor-pointer transition-colors border-b border-purple-500/20 select-none"
+            className="flex items-center justify-between px-3 py-2.5 bg-purple-900/25 hover:bg-purple-900/35 cursor-pointer transition-colors border-b border-purple-500/25 select-none"
           >
-            <div className="flex items-center gap-2">
-              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-purple-500/20 text-purple-400">
-                <Brain className={`h-3.5 w-3.5 ${isGenerating ? "animate-pulse text-purple-300" : ""}`} />
+            <div className="flex items-center gap-2.5">
+              <div className="relative flex h-6 w-6 items-center justify-center rounded-lg bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/40">
+                <Brain className={`h-4 w-4 ${isGenerating ? "animate-pulse text-purple-300" : ""}`} />
+                {isGenerating && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500" />
+                  </span>
+                )}
               </div>
-              <span className="text-xs font-bold text-purple-300">
-                Agent Thinking & Strategy
-              </span>
-              {isGenerating && (
-                <span className="flex items-center gap-1 text-[10px] text-purple-400 font-mono">
-                  <Clock className="h-2.5 w-2.5" />
-                  {elapsedSeconds}s
-                </span>
-              )}
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold tracking-tight bg-gradient-to-r from-purple-200 via-indigo-200 to-pink-200 bg-clip-text text-transparent">
+                    Autonomous Cognitive Thinking
+                  </span>
+                  <Badge variant="violet" className="text-[9px] uppercase px-1.5 py-0 font-mono tracking-wider">
+                    {isGenerating ? "Reasoning..." : "Completed"}
+                  </Badge>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 text-purple-400 text-xs">
-              <span className="text-[10px] bg-purple-500/20 px-1.5 py-0.5 rounded font-mono">
-                {agentThoughts.length} Thoughts
+
+            <div className="flex items-center gap-2 text-purple-300 text-xs">
+              {agentThoughts.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleCopyThoughts}
+                  className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded border border-purple-500/20 transition-colors"
+                  title="Copy full reasoning trace"
+                >
+                  {copiedThoughts ? "Copied" : "Copy trace"}
+                </button>
+              )}
+              <span className="flex items-center gap-1 text-[11px] font-mono text-purple-300/90 bg-purple-500/15 border border-purple-500/20 px-2 py-0.5 rounded-full">
+                <Clock className="h-3 w-3 text-purple-400" />
+                {isGenerating ? `Thinking for ${elapsedSeconds}s` : `Thought for ${elapsedSeconds}s`}
               </span>
-              {isThinkingExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              <span className="text-[10px] bg-purple-500/20 px-1.5 py-0.5 rounded font-mono text-purple-300">
+                {agentThoughts.length} steps
+              </span>
+              {isThinkingExpanded ? <ChevronUp className="h-3.5 w-3.5 text-purple-400" /> : <ChevronDown className="h-3.5 w-3.5 text-purple-400" />}
             </div>
           </div>
 
           {isThinkingExpanded && (
-            <div className="p-2.5 space-y-1.5 text-[11px] font-mono leading-relaxed bg-black/40">
+            <div className="p-3 space-y-2 text-[11px] font-mono leading-relaxed bg-black/60 max-h-[300px] overflow-y-auto divide-y divide-purple-900/20">
               {agentThoughts.length === 0 && isGenerating ? (
-                <div className="flex items-center gap-2 text-purple-400 py-1">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  <span>Analyzing architecture, design system, and Stitch UI tokens...</span>
+                <div className="flex items-center gap-2.5 text-purple-300 py-2">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-400" />
+                  <span className="animate-pulse">Analyzing user intent, architectural contracts, and design tokens...</span>
                 </div>
               ) : (
-                agentThoughts.map((thought, idx) => (
-                  <div key={idx} className="flex items-start gap-2 text-purple-200">
-                    <span className="text-purple-400 shrink-0 select-none font-bold">›</span>
-                    <span className="break-words">{thought}</span>
-                  </div>
-                ))
+                agentThoughts.map((thought, idx) => {
+                  // Extract bracketed stage tag if present, e.g. [COGNITIVE SPEC ANALYSIS]
+                  const match = thought.match(/\[(.*?)\]/);
+                  const stageTag = match ? match[1] : null;
+                  const cleanThought = match ? thought.replace(/\[.*?\]/, "").trim() : thought;
+
+                  return (
+                    <div key={idx} className="pt-2 first:pt-0 flex items-start gap-2.5 text-zinc-300 group">
+                      <span className="text-purple-400 shrink-0 select-none font-bold text-xs mt-0.5">›</span>
+                      <div className="flex-1 space-y-1">
+                        {stageTag && (
+                          <span className="inline-block px-1.5 py-0.2 rounded text-[9px] uppercase tracking-wider font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30 mr-1.5">
+                            {stageTag}
+                          </span>
+                        )}
+                        <span className="text-purple-100/90 leading-normal break-words">{cleanThought}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+
+              {/* Streaming cursor token while actively thinking */}
+              {isGenerating && (
+                <div className="pt-1.5 flex items-center gap-1.5 text-purple-400 text-xs font-mono">
+                  <span className="inline-block w-1.5 h-3.5 bg-purple-400 animate-pulse rounded-xs" />
+                  <span className="text-[10px] text-purple-400/80 animate-pulse">synthesizing cognitive chain...</span>
+                </div>
               )}
 
               {/* Active command executing in sandbox */}
               {activeCommand && (
-                <div className="flex items-center gap-2 text-emerald-400 pt-1 border-t border-purple-500/20 text-[10px]">
-                  <Command className="h-3 w-3 animate-spin" />
-                  <span>Sandbox running: <code className="bg-black/60 px-1 py-0.5 rounded">{activeCommand}</code></span>
+                <div className="flex items-center gap-2 text-emerald-400 pt-2 border-t border-purple-500/20 text-[10px]">
+                  <Command className="h-3 w-3 animate-spin text-emerald-400" />
+                  <span>Sandbox MicroVM running: <code className="bg-zinc-900 px-1.5 py-0.5 rounded text-emerald-300 border border-emerald-500/20">{activeCommand}</code></span>
                 </div>
               )}
             </div>

@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { generateProjectId } from "@/lib/project-storage";
 
 interface Template {
   id: string;
@@ -140,7 +141,7 @@ export default function TemplatesPage() {
 
   const handleForkWithAI = () => {
     if (!selectedTemplate) return;
-    const newProjId = `proj-${Date.now()}`;
+    const newProjId = generateProjectId();
     const targetFramework = selectedTemplate.techStack.some((t) =>
       t.toLowerCase().includes("expo") || t.toLowerCase().includes("react native")
     )
@@ -149,9 +150,17 @@ export default function TemplatesPage() {
       ? "Next.js 14"
       : "Vite + React";
     const promptToUse = customPrompt.trim() || selectedTemplate.defaultPrompt;
-    router.push(
-      `/project/${newProjId}?prompt=${encodeURIComponent(promptToUse)}&framework=${encodeURIComponent(targetFramework)}`
-    );
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem(
+          "byt_pending_build",
+          JSON.stringify({ prompt: promptToUse, framework: targetFramework, projectId: newProjId })
+        );
+      } catch (e) {
+        console.warn("sessionStorage write error", e);
+      }
+    }
+    router.push(`/apps/${newProjId}/editor/preview`);
   };
 
   return (

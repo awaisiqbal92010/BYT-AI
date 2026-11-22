@@ -38,6 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
 import Link from "next/link";
 import { MobileAppBuildModal } from "./MobileAppBuildModal";
+import { AppetizeEmulator } from "./AppetizeEmulator";
 
 type Viewport = "desktop" | "tablet" | "mobile";
 
@@ -56,6 +57,7 @@ interface LivePreviewSandboxProps {
   onViewCode?: () => void;
   onDownloadZip?: () => void;
   framework?: "Next.js 14" | "Vite + React" | "React Native Expo" | string;
+  projectName?: string;
   onOpenMobileBuild?: () => void;
   onSandboxChange?: (sandboxId: string, previewUrl: string) => void;
 }
@@ -70,6 +72,7 @@ export function LivePreviewSandbox({
   onViewCode,
   onDownloadZip,
   framework = "Vite + React",
+  projectName = "BYT Mobile App",
   onOpenMobileBuild,
   onSandboxChange,
 }: LivePreviewSandboxProps) {
@@ -80,6 +83,7 @@ export function LivePreviewSandbox({
   const [copiedUrl, setCopiedUrl] = React.useState(false);
   const [isInspectorActive, setIsInspectorActive] = React.useState(false);
   const [mode, setMode] = React.useState<"in-browser" | "e2b">("in-browser");
+  const [mobilePreviewMode, setMobilePreviewMode] = React.useState<"appetize" | "e2b">("appetize");
 
   // Mobile Device Frame Customization
   const [isPhoneFrameEnabled, setIsPhoneFrameEnabled] = React.useState(true);
@@ -327,13 +331,20 @@ export function LivePreviewSandbox({
     }
   }, [files]);
 
+  // Masked Sandbox Proxy URL (hides raw *.e2b.app behind BYT domain)
+  const maskedSandboxUrl = sandboxId ? `/api/sandbox/proxy/${sandboxId}` : e2bPreviewUrl;
+
   const standaloneUrl =
-    mode === "e2b" && e2bPreviewUrl
-      ? `/preview?e2b=${encodeURIComponent(e2bPreviewUrl)}`
+    mode === "e2b" && (maskedSandboxUrl || e2bPreviewUrl)
+      ? `/preview?e2b=${encodeURIComponent(maskedSandboxUrl || e2bPreviewUrl || "")}`
       : `/preview`;
 
   const displayUrl =
-    mode === "e2b" && e2bPreviewUrl
+    mode === "e2b" && sandboxId
+      ? typeof window !== "undefined"
+        ? `${window.location.origin}/api/sandbox/proxy/${sandboxId}`
+        : `https://byt.site/api/sandbox/proxy/${sandboxId}`
+      : mode === "e2b" && e2bPreviewUrl
       ? e2bPreviewUrl
       : typeof window !== "undefined"
       ? `${window.location.origin}/preview`
@@ -548,6 +559,38 @@ export function LivePreviewSandbox({
 
         {/* Right: Viewports & Tools */}
         <div className="flex items-center gap-1">
+          {/* Expo Mobile Preview Mode Switcher */}
+          {isExpo && (
+            <div className="flex items-center bg-muted/60 p-0.5 rounded-md border border-border/50 text-[11px] gap-0.5">
+              <button
+                type="button"
+                onClick={() => setMobilePreviewMode("appetize")}
+                className={`px-2 py-1 rounded-sm flex items-center gap-1 transition-all ${
+                  mobilePreviewMode === "appetize"
+                    ? "bg-emerald-600 text-white font-semibold shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Launch interactive Appetize.io Android Emulator"
+              >
+                <Smartphone className="h-3 w-3" />
+                <span>Appetize Android</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobilePreviewMode("e2b")}
+                className={`px-2 py-1 rounded-sm flex items-center gap-1 transition-all ${
+                  mobilePreviewMode === "e2b"
+                    ? "bg-purple-600 text-white font-semibold shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="E2B Cloud MicroVM Dev Server"
+              >
+                <Box className="h-3 w-3" />
+                <span>E2B Cloud</span>
+              </button>
+            </div>
+          )}
+
           {/* Mobile Build APK Action Button */}
           {isExpo && (
             <Button
@@ -661,15 +704,15 @@ export function LivePreviewSandbox({
 
           {/* View Code Toggle */}
           {onViewCode && (
-            <Tooltip content="Switch to Code Editor">
+            <Tooltip content="Switch to Code Editor (Hotkey: 2)">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={onViewCode}
-                className="hidden lg:flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 hover:bg-indigo-950/30 h-7 px-2 rounded-md"
+                className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 border-indigo-500/40 bg-indigo-950/20 hover:bg-indigo-900/40 hover:text-indigo-300 h-7 px-2.5 rounded-lg shadow-2xs transition-all"
               >
                 <Code2 className="h-3.5 w-3.5" />
-                <span className="text-[11px]">Code</span>
+                <span>Code</span>
               </Button>
             </Tooltip>
           )}
@@ -720,9 +763,20 @@ export function LivePreviewSandbox({
 
       {/* Main Preview Container */}
       <div className="flex-1 overflow-auto p-3 md:p-4 flex items-start justify-center bg-dot-grid relative">
-        <div
-          className={`h-full max-h-full transition-all duration-300 ease-in-out flex flex-col ${viewportWidths[viewport]}`}
-        >
+        {isExpo && mobilePreviewMode === "appetize" ? (
+          <div className="w-full h-full max-w-4xl flex items-center justify-center p-2 animate-fade-in">
+            <AppetizeEmulator
+              projectName={projectName}
+              files={files}
+              defaultPlatform="android"
+              onOpenQr={() => setShowQrModal(true)}
+              className="w-full h-full min-h-[660px]"
+            />
+          </div>
+        ) : (
+          <div
+            className={`h-full max-h-full transition-all duration-300 ease-in-out flex flex-col ${viewportWidths[viewport]}`}
+          >
           {/* Mock Browser or Enhanced Smartphone Device Container */}
           <div className="flex-1 flex flex-col items-center justify-center relative">
             {/* Realistic Titanium Phone Chassis (When Mobile/Expo & Frame Enabled) */}
@@ -801,12 +855,12 @@ export function LivePreviewSandbox({
                           srcDoc={compiledSrcDoc}
                           title="BYT Same-Origin In-Browser Live Sandbox"
                           className="w-full h-full border-0 bg-slate-950 flex-1"
-                          sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                          sandbox="allow-forms allow-modals allow-popups allow-presentation allow-scripts"
                         />
-                      ) : mode === "e2b" && e2bPreviewUrl ? (
+                      ) : mode === "e2b" && (maskedSandboxUrl || e2bPreviewUrl) ? (
                         <iframe
-                          key={e2bPreviewUrl + (isRefreshing ? "-refresh" : "")}
-                          src={e2bPreviewUrl}
+                          key={(maskedSandboxUrl || e2bPreviewUrl) + (isRefreshing ? "-refresh" : "")}
+                          src={maskedSandboxUrl || e2bPreviewUrl || ""}
                           title="E2B Live Cloud Sandbox Preview"
                           className="w-full h-full border-0 bg-background flex-1"
                           allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; payment; usb; xr-spatial-tracking"
@@ -901,12 +955,12 @@ export function LivePreviewSandbox({
                     srcDoc={compiledSrcDoc}
                     title="BYT Same-Origin In-Browser Live Sandbox"
                     className="w-full h-full min-h-[580px] border-0 bg-slate-950 flex-1"
-                    sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                    sandbox="allow-forms allow-modals allow-popups allow-presentation allow-scripts"
                   />
-                ) : mode === "e2b" && e2bPreviewUrl ? (
+                ) : mode === "e2b" && (maskedSandboxUrl || e2bPreviewUrl) ? (
                   <iframe
-                    key={e2bPreviewUrl + (isRefreshing ? "-refresh" : "")}
-                    src={e2bPreviewUrl}
+                    key={(maskedSandboxUrl || e2bPreviewUrl) + (isRefreshing ? "-refresh" : "")}
+                    src={maskedSandboxUrl || e2bPreviewUrl || ""}
                     title="E2B Live Cloud Sandbox Preview"
                     className="w-full h-full min-h-[580px] border-0 bg-background flex-1"
                     allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; payment; usb; xr-spatial-tracking"
@@ -971,6 +1025,7 @@ export function LivePreviewSandbox({
             )}
           </div>
         </div>
+        )}
       </div>
 
       {/* QR Code Modal for Phone Testing */}
