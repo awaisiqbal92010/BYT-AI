@@ -31,6 +31,7 @@ export interface PlanOptions {
 
 // Alias so consumers can import either name
 export { generatePlan as planProject };
+export { AGENT_TOOLS, getToolSchemas, getToolByName } from "./tools";
 
 function getSystemPromptForFramework(framework: SandboxFramework = "vite-react"): string {
   if (framework === "nextjs") {

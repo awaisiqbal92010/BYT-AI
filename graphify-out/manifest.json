@@ -252,9 +252,9 @@
     "semantic_hash": ""
   },
   "lib/ai/orchestrator.ts": {
-    "mtime": 1795264632.21919,
-    "seen": 1795330211.2519715,
-    "ast_hash": "f379d68f7c87028ac10b18ffb466f732",
+    "mtime": 1795348809.4776833,
+    "seen": 1795349531.4029667,
+    "ast_hash": "0a8aaefcacd2b9f2c02f5d75d9bff4d2",
     "semantic_hash": ""
   },
   "lib/ai/providers.ts": {
@@ -300,9 +300,9 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1795333099.518144,
-    "seen": 1795348457.77643,
-    "ast_hash": "734289377b9dc95bf61879b8ccd69fe4",
+    "mtime": 1795349204.5426934,
+    "seen": 1795349531.4255686,
+    "ast_hash": "54b54feabf5e4cebcc541bcf41b7d058",
     "semantic_hash": ""
   },
   "postcss.config.mjs": {
@@ -1050,9 +1050,9 @@
     "semantic_hash": ""
   },
   "app/(dashboard)/apps/[id]/editor/[[...view]]/page.tsx": {
-    "mtime": 1795348178.7574215,
-    "seen": 1795348457.6177652,
-    "ast_hash": "39a590901cf95374ccdfabbe8bafa016",
+    "mtime": 1795348768.5207026,
+    "seen": 1795349531.335335,
+    "ast_hash": "b691f1fe4d02948c306fdd3a55016cef",
     "semantic_hash": ""
   },
   "proxy.ts": {
@@ -1281,6 +1281,18 @@
     "mtime": 1795347609.3233593,
     "seen": 1795348457.7252436,
     "ast_hash": "09d60a207034575620a184d6055b46ef",
+    "semantic_hash": ""
+  },
+  "vercel.json": {
+    "mtime": 1795349138.7559872,
+    "seen": 1795349531.4313104,
+    "ast_hash": "3f0036d9d88c0dde0b43e9e4360bd33b",
+    "semantic_hash": ""
+  },
+  "workers/edge-router.ts": {
+    "mtime": 1795349350.9880188,
+    "seen": 1795349531.4313192,
+    "ast_hash": "5eaf7ec5e416f84febcfc11a6a855345",
     "semantic_hash": ""
   }
 }

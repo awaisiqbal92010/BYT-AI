@@ -250,7 +250,7 @@ export default function AppEditorPage() {
   const handleSendMessageRef = React.useRef<((prompt: string) => Promise<void>) | undefined>(undefined);
 
   React.useEffect(() => {
-    if (isLoadingProject || hasTriggeredInitialPrompt.current || messages.length > 0) return;
+    if (isLoadingProject || hasTriggeredInitialPrompt.current || messages.length > 0 || files.length > 0) return;
 
     if (typeof window !== "undefined") {
       let promptToRun = legacyPrompt;
@@ -260,8 +260,8 @@ export default function AppEditorPage() {
         const rawPending = sessionStorage.getItem("byt_pending_build");
         if (rawPending) {
           const pending = JSON.parse(rawPending);
-          // If pending belongs to this project or is a fresh generation
-          if (pending && pending.prompt) {
+          // Only trigger if pending is for this project or is a fresh new project build
+          if (pending && pending.prompt && (!pending.projectId || pending.projectId === projectId)) {
             promptToRun = pending.prompt;
             if (pending.framework) {
               fwToRun = pending.framework;
@@ -280,7 +280,7 @@ export default function AppEditorPage() {
         handleSendMessageRef.current(promptToRun);
       }
     }
-  }, [isLoadingProject, legacyPrompt, initialFramework, messages.length]);
+  }, [isLoadingProject, legacyPrompt, initialFramework, messages.length, files.length, projectId]);
 
   // Save project handler
   const handleSaveProject = React.useCallback(async () => {
@@ -441,7 +441,12 @@ export default function AppEditorPage() {
       });
 
       if (!response.ok || !response.body) {
-        throw new Error(`Generation failed with status ${response.status}`);
+        if (response.status === 401) {
+          setIsAuthModalOpen(true);
+          throw new Error("Authentication required. Please sign in to build projects.");
+        }
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson?.error?.message || errJson?.error || `Generation failed with status ${response.status}`);
       }
 
       const reader = response.body.getReader();

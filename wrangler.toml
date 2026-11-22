@@ -1,0 +1,16 @@
+name = "byt-studio"
+main = "workers/edge-router.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "production"
+BACKEND_ORIGIN = "https://byt-ai.vercel.app"
+
+# Optional Cloudflare Pages configuration
+pages_build_output_dir = ".vercel/output/static"
+
+# Edge KV / Rate Limiting namespaces (uncomment when bound in Cloudflare dashboard)
+# [[kv_namespaces]]
+# binding = "BYT_CACHE"
+# id = "your-kv-namespace-id"

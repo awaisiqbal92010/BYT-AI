@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "tsx tests/sandbox-tests.ts"
+    "test": "tsx tests/sandbox-tests.ts",
+    "deploy:vercel": "vercel --prod",
+    "deploy:cloudflare": "wrangler deploy"
   },
   "dependencies": {
     "@e2b/code-interpreter": "^2.7.2",
