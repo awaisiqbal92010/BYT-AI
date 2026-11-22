@@ -34,16 +34,54 @@ export class ProviderError extends Error {
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * Prioritized list of best free OpenRouter coding & reasoning models
- * Verified against https://openrouter.ai/models?q=free
+ * Prioritized list of active free OpenRouter coding & reasoning models
+ * Dynamically verified against OpenRouter catalog
  */
 export const BEST_FREE_CODING_MODELS = [
-  "google/gemini-2.0-flash-exp:free",       // Google Gemini 2.0 Flash (free experimental)
-  "meta-llama/llama-3.3-70b-instruct:free", // Meta Llama 3.3 70B Instruct
-  "qwen/qwen-2.5-coder-32b-instruct:free",  // Qwen 2.5 Coder 32B — strong code model
-  "deepseek/deepseek-r1-0528:free",          // DeepSeek R1 reasoning model
-  "microsoft/phi-4-reasoning-plus:free",     // Microsoft Phi-4 Reasoning Plus
+  "nvidia/nemotron-3.5-lightning:free",
+  "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+  "google/gemma-4-31b-it:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "recursive/flint-v1.0:free",
+  "baidu/ernie-5.5-flash-preview:free",
+  "inclusionai/ling-3.2-flash:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "qwen/qwen-2.5-coder-32b-instruct:free",
+  "deepseek/deepseek-r1-0528:free",
+  "liquid/lfm-3-1.7b:free",
+  "particle-ai/particle-1:free",
 ];
+
+// In-memory cache of live free models discovered from OpenRouter
+let dynamicFreeModelsCache: string[] = [];
+let lastCatalogFetchTime = 0;
+
+async function getLiveFreeModels(): Promise<string[]> {
+  const now = Date.now();
+  if (dynamicFreeModelsCache.length > 0 && now - lastCatalogFetchTime < 600000) {
+    return dynamicFreeModelsCache;
+  }
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/models", { signal: AbortSignal.timeout(5000) });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.data)) {
+        const liveFree = data.data
+          .filter((m: any) => typeof m.id === "string" && m.id.endsWith(":free"))
+          .map((m: any) => m.id);
+        if (liveFree.length > 0) {
+          dynamicFreeModelsCache = liveFree;
+          lastCatalogFetchTime = now;
+          return liveFree;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[OpenRouter Catalog Discovery]:", err);
+  }
+  return BEST_FREE_CODING_MODELS;
+}
 
 /**
  * Call OpenRouter API with automated smart fallback across top free coding models.
@@ -57,7 +95,11 @@ export async function callOpenRouter(
     throw new ProviderError("openrouter", "OPENROUTER_API_KEY is not configured in .env.local", 401);
   }
 
-  const modelsToTry = options.model ? [options.model, ...BEST_FREE_CODING_MODELS.filter(m => m !== options.model)] : BEST_FREE_CODING_MODELS;
+  const liveFreeCatalog = await getLiveFreeModels();
+  const baseModels = Array.from(new Set([...BEST_FREE_CODING_MODELS, ...liveFreeCatalog]));
+  const modelsToTry = options.model
+    ? [options.model, ...baseModels.filter((m) => m !== options.model)]
+    : baseModels;
   let lastError: ProviderError | null = null;
 
   for (let i = 0; i < modelsToTry.length; i++) {
@@ -145,7 +187,12 @@ export async function callMistral(
     throw new ProviderError("mistral", "MISTRAL_API_KEY is not configured in .env.local", 401);
   }
 
-  const mistralModels = [options.model || "codestral-latest", "mistral-small-latest"];
+  const mistralModels = [
+    options.model || "codestral-latest",
+    "mistral-small-latest",
+    "open-mistral-nemo",
+    "mistral-large-latest",
+  ];
   let lastError: ProviderError | null = null;
 
   for (const model of mistralModels) {

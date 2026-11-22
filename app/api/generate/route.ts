@@ -66,45 +66,40 @@ export async function POST(request: NextRequest) {
     const decoded = await verifySessionCookie(sessionCookie);
     const uid = decoded?.uid ?? null;
 
+    // SECURITY: Authentication is REQUIRED for all project generation
+    if (!uid) {
+      return NextResponse.json(
+        { error: { code: "AUTH_REQUIRED", message: "Authentication required. Please sign in to generate projects." } },
+        { status: 401 }
+      );
+    }
+
     const currentPeriod = new Date().toISOString().slice(0, 7);
 
     // 2. Check Generation Quota
-    if (uid) {
-      try {
-        const db = getAdminDb();
-        const userDoc = await db.collection("users").doc(uid).get();
-        const userPlan: string = userDoc.data()?.plan || "free";
-        const LIMITS: Record<string, number> = { free: 50, medium: 200, premium: 1000, legendary: 99999 };
-        const limit = LIMITS[userPlan] ?? 50;
+    try {
+      const db = getAdminDb();
+      const userDoc = await db.collection("users").doc(uid).get();
+      const userPlan: string = userDoc.data()?.plan || "free";
+      const LIMITS: Record<string, number> = { free: 50, medium: 200, premium: 1000, legendary: 99999 };
+      const limit = LIMITS[userPlan] ?? 50;
 
-        const usageDoc = await db
-          .collection("usage")
-          .doc(uid)
-          .collection("months")
-          .doc(currentPeriod)
-          .get();
-        const currentCount: number = usageDoc.data()?.promptCount || 0;
+      const usageDoc = await db
+        .collection("usage")
+        .doc(uid)
+        .collection("months")
+        .doc(currentPeriod)
+        .get();
+      const currentCount: number = usageDoc.data()?.promptCount || 0;
 
-        if (currentCount >= limit) {
-          return NextResponse.json(
-            { error: `Monthly generation limit reached (${currentCount}/${limit}). Upgrade your plan in Settings.` },
-            { status: 429 }
-          );
-        }
-      } catch (limitErr) {
-        console.warn("[Generate] Quota check warning:", limitErr);
-      }
-    } else {
-      // Guest IP-based rate limiting (prevents anonymous quota bypass)
-      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "guest";
-      const { rateLimit } = await import("@/lib/cache");
-      const rl = await rateLimit(`guest_gen_${ip}`, 8, 3600);
-      if (!rl.success) {
+      if (currentCount >= limit) {
         return NextResponse.json(
-          { error: "Guest generation limit reached. Please sign in or create a free account to continue." },
+          { error: `Monthly generation limit reached (${currentCount}/${limit}). Upgrade your plan in Settings.` },
           { status: 429 }
         );
       }
+    } catch (limitErr) {
+      console.warn("[Generate] Quota check warning:", limitErr);
     }
 
     // 3. Prepare SSE Stream
@@ -367,7 +362,19 @@ export async function POST(request: NextRequest) {
                 description: plan.description || "",
                 framework,
                 files: generatedFiles,
-                messages: [],
+                messages: [
+                  {
+                    role: "user",
+                    content: prompt,
+                    timestamp: new Date().toISOString(),
+                  },
+                  {
+                    role: "assistant",
+                    content: `Generated ${generatedFiles.length} files for "${plan.projectName}" (${framework}). Files: ${generatedFiles.map((f: any) => f.path).join(", ")}`,
+                    timestamp: new Date().toISOString(),
+                    files: generatedFiles.map((f: any) => ({ path: f.path, language: f.language })),
+                  },
+                ],
                 previewUrl: livePreviewUrl || null,
                 isPublic: false,
                 createdAt: existingDoc.exists ? existingDoc.data()?.createdAt : now,

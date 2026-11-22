@@ -132,8 +132,44 @@ export default function ProjectsPage() {
   const [newProjectFramework, setNewProjectFramework] = React.useState("Next.js 14");
   const [isLoading, setIsLoading] = React.useState(true);
 
-  const refreshProjects = React.useCallback(() => {
-    setProjects(getSavedProjects());
+  const refreshProjects = React.useCallback(async () => {
+    const local = getSavedProjects();
+    setProjects(local);
+
+    try {
+      const res = await fetch("/api/projects");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.projects) && data.projects.length > 0) {
+          const remoteList: SavedProject[] = data.projects.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+            description: p.description || "",
+            framework: p.framework || "Next.js 14",
+            status: "live" as const,
+            deployUrl: p.previewUrl || p.deployUrl,
+            updatedAt: typeof p.updatedAt === "string" ? p.updatedAt : new Date().toISOString(),
+            createdAt: typeof p.createdAt === "string" ? p.createdAt : new Date().toISOString(),
+            promptSnippet: p.description || "",
+            gradient: "from-violet-600/20 via-indigo-600/10 to-transparent",
+            files: p.files || [],
+            messages: p.messages || [],
+            is_public: p.isPublic ?? p.is_public,
+          }));
+
+          const merged = [...remoteList];
+          for (const lp of local) {
+            if (!merged.some((mp) => mp.id === lp.id)) {
+              merged.push(lp);
+            }
+          }
+          setProjects(merged);
+        }
+      }
+    } catch {
+      // offline fallback
+    }
   }, []);
 
   React.useEffect(() => {
@@ -157,9 +193,13 @@ export default function ProjectsPage() {
   });
 
   const handleCreateProject = async (overrideName?: string, overridePrompt?: string) => {
-    const finalName = (overrideName || newProjectName || "AI Web App").trim();
     const finalPrompt = (overridePrompt !== undefined ? overridePrompt : newProjectPrompt).trim();
-    if (!finalName) return;
+    // Auto-derive project name from prompt if name field is empty
+    const derivedName = finalPrompt
+      ? finalPrompt.split(/[.!?\n]/)[0].slice(0, 40).trim() || "AI Web App"
+      : "AI Web App";
+    const finalName = (overrideName || newProjectName || derivedName).trim();
+    if (!finalName && !finalPrompt) return;
     const newProjId = generateProjectId();
     await saveProject({
       id: newProjId,
@@ -381,7 +421,7 @@ export default function ProjectsPage() {
                         id: "open",
                         label: "Open in Builder",
                         icon: <ArrowUpRight className="h-3.5 w-3.5" />,
-                        onClick: () => router.push(`/project/${project.id}`),
+                        onClick: () => router.push(`/apps/${project.id}/editor/preview`),
                       },
                       {
                         id: "deploy",
@@ -550,7 +590,7 @@ export default function ProjectsPage() {
                 size="sm"
                 className="gap-1.5"
                 onClick={() => handleCreateProject()}
-                disabled={!newProjectName.trim()}
+                disabled={!newProjectName.trim() && !newProjectPrompt.trim()}
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Create & Launch Builder</span>

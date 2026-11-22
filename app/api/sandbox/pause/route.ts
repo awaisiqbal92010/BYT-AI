@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pauseSandbox } from "@/lib/sandbox";
+import { verifySessionCookie } from "@/lib/firebase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,16 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: Require authenticated user
+    const cookie = request.cookies.get("session")?.value;
+    const decoded = await verifySessionCookie(cookie);
+    if (!decoded?.uid) {
+      return NextResponse.json(
+        { success: false, error: { code: "AUTH_REQUIRED", message: "Authentication required." } },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const sandboxId = body?.sandboxId;
 

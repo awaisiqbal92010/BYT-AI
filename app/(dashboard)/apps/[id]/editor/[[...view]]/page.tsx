@@ -549,7 +549,24 @@ export default function AppEditorPage() {
                   action: "created",
                 })),
               };
-              setMessages((prev) => [...prev, aiMsg]);
+              setMessages((prev) => {
+                const nextMessages = [...prev, aiMsg];
+                // Auto-persist project state to ensure chat history & files are preserved permanently
+                const flatGenerated =
+                  event.files && event.files.length > 0
+                    ? event.files
+                    : Array.from(accumulatedFiles.entries()).map(([path, content]) => ({ path, content }));
+                saveProject({
+                  id: projectId,
+                  name: event.projectName || projectName,
+                  framework,
+                  files: flatGenerated,
+                  messages: nextMessages,
+                  sandboxId: event.sandboxId || sandboxId,
+                  e2bPreviewUrl: event.previewUrl || e2bPreviewUrl,
+                }).catch((saveErr) => console.warn("[AutoSave] Failed to persist generation state:", saveErr));
+                return nextMessages;
+              });
             } else if (event.type === "error") {
               const errorMsg: ChatMessage = {
                 id: `ai-err-${Date.now()}`,

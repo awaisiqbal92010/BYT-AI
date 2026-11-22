@@ -20,6 +20,14 @@ export async function POST(request: NextRequest) {
     const decoded = await verifySessionCookie(cookie);
     const uid = decoded?.uid ?? null;
 
+    // SECURITY: Require authenticated user for sandbox creation
+    if (!uid) {
+      return NextResponse.json(
+        { success: false, error: { code: "AUTH_REQUIRED", message: "Authentication required to create sandboxes." } },
+        { status: 401 }
+      );
+    }
+
     let customFiles: SandboxFile[] | undefined = undefined;
     let framework: SandboxFramework = "vite-react";
     let requestedSandboxId: string | undefined = undefined;

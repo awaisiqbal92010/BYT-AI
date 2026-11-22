@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ActivityStreamer, ExecutionStep } from "./ActivityStreamer";
+import { FileIcon } from "./FileIcons";
 
 export interface ChatMessage {
   id: string;
@@ -221,7 +222,7 @@ export function ChatSidebar({
                         className="flex items-center justify-between rounded bg-muted/40 px-2.5 py-1 text-[11px] font-mono text-foreground border border-border/40 hover:border-primary/50 hover:bg-muted/70 cursor-pointer transition-colors"
                       >
                         <div className="flex items-center gap-1.5 truncate">
-                          <FileCode2 className="h-3 w-3 text-primary shrink-0" />
+                          <FileIcon filename={file.name} className="h-3 w-3 shrink-0" />
                           <span className="truncate">{file.name}</span>
                         </div>
                         <span className="text-[9px] uppercase font-semibold text-muted-foreground ml-2">

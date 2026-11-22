@@ -1,11 +1,11 @@
-# Graph Report - BYT  (2026-10-29)
+# Graph Report - BYT  (2026-11-22)
 
 ## Corpus Check
-- 176 files · ~90,753 words
+- 210 files · ~97,027 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1019 nodes · 1736 edges · 106 communities (42 shown, 64 thin omitted)
+- 1131 nodes · 1835 edges · 141 communities (47 shown, 94 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 8 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
@@ -30,24 +30,28 @@
 - cn
 - deployments/page.tsx
 - Agent tasks
-- login/page.tsx
+- AuthProvider
 - firebase.ts
-- Zap
+- privacy/page.tsx
 - 6A tasks
 - Supabase
 - Changelog
 - builder/[id]/page.tsx
 - Changelog
 - Writing Guidelines for Postgres References
-- MobileAppBuildModal.tsx
+- orchestrator.ts
+- ExportDeployModal.tsx
 - next.config.mjs
 - postcss.config.mjs
 - tailwind.config.ts
 - FileTreeExplorer.tsx
+- preview/page.tsx
+- acceptable-use/page.tsx
 - Section Definitions
 - Phase 0 — Security Audit Report
 - BYT — Agent Operating Rules
 - Supabase Postgres Best Practices
+- cookies/page.tsx
 - AI Agent Prompt Engineering Skill
 - Component Testing & Debugging Skill
 - Dark Mode & Theme Tokens Skill
@@ -106,20 +110,49 @@
 - security-rls-performance.md
 - _template.md
 - workflows/graphify.md
+- Microservices & Domain-Driven Design (DDD)
 - supabase/types.ts
 - TerminalDrawer.tsx
 - ChatSidebar.tsx
 - projects/page.tsx
+- api-handler.ts
 - migrate-supabase-to-firestore.mjs
 - logout/route.ts
 - proxy.ts
+- Enterprise Web Accessibility (WCAG 2.2 AAA)
+- API Gateway & Rate Limiting
+- Bento Grid & Spatial UI Layouts
+- Canvas & WebGL Shaders
+- CDN Edge Compute & Streaming Architecture
+- Chaos Engineering & Fault Tolerance
+- Color Theory & Wide Gamut (OKLCH / Display P3)
+- CQRS & Event Sourcing Architecture
+- Conflict-Free Replicated Data Types (CRDTs)
+- Database Indexing & Sharding Best Practices
+- Design Tokens & Figma Synchronization
+- Distributed Caching with Redis
+- Event-Driven Architecture (Kafka / RabbitMQ)
+- GraphQL Federation & Relay Specification
+- Kubernetes & Helm Deployment Best Practices
+- Micro-Interactions & Spring Physics
+- Mobile-First Touch & Gesture Ergonomics
+- Multi-Tenant Cloud Architecture
+- Resilient Offline Sync & PWA Architecture
+- RESTful API & OpenAPI 3.1 Design
+- Serverless Cold Start Reduction
+- State Machines & Deterministic Workflows (XState)
+- OpenTelemetry & Enterprise APM
+- Typographic Scale & Visual Hierarchy
+- Vector Embeddings & Hybrid RAG Search
+- WebSocket Real-Time Collaboration
+- Zero-Trust Security & OpenID Connect (OIDC)
 
 ## God Nodes (most connected - your core abstractions)
 1. `cn()` - 32 edges
 2. `Badge()` - 25 edges
 3. `Button` - 22 edges
 4. `getAdminDb()` - 19 edges
-5. `verifySessionCookie()` - 17 edges
+5. `verifySessionCookie()` - 18 edges
 6. `compilerOptions` - 17 edges
 7. `6A tasks` - 15 edges
 8. `Tooltip()` - 14 edges
@@ -131,33 +164,33 @@
   app/(dashboard)/templates/page.tsx → lib/project-storage.ts
 - `StandalonePreviewContent()` --calls--> `getProjectById()`  [EXTRACTED]
   app/preview/page.tsx → lib/project-storage.ts
-- `AppEditorPage()` --calls--> `downloadProjectAsZip()`  [EXTRACTED]
-  app/(dashboard)/apps/[id]/editor/[[...view]]/page.tsx → lib/export-zip.ts
-- `BuilderPage()` --calls--> `downloadProjectAsZip()`  [EXTRACTED]
-  app/(dashboard)/page.tsx → lib/export-zip.ts
-- `POST()` --calls--> `getAdminDb()`  [EXTRACTED]
-  app/api/generate/route.ts → lib/firebase/admin.ts
+- `POST()` --calls--> `getPortForFramework()`  [EXTRACTED]
+  app/api/generate/route.ts → lib/sandbox.ts
+- `POST()` --calls--> `runCommandInSandbox()`  [EXTRACTED]
+  app/api/sandbox/command/route.ts → lib/sandbox.ts
+- `POST()` --calls--> `rateLimit()`  [EXTRACTED]
+  app/api/sandbox/create/route.ts → lib/cache.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (106 total, 64 thin omitted)
+## Communities (141 total, 94 thin omitted)
 
 ### Community 0 - "badge.tsx"
-Cohesion: 0.09
-Nodes (23): Checkpoint, CHECKPOINTS, ActivityStreamerProps, ANDROID_DEVICES, AppetizeEmulator(), AppetizeEmulatorProps, IOS_DEVICES, CodeEditorView() (+15 more)
+Cohesion: 0.13
+Nodes (19): Checkpoint, CHECKPOINTS, ANDROID_DEVICES, AppetizeEmulator(), AppetizeEmulatorProps, IOS_DEVICES, CodeEditorViewProps, LivePreviewFile (+11 more)
 
 ### Community 1 - "(dashboard)/page.tsx"
-Cohesion: 0.12
-Nodes (37): AppEditorPage(), load(), convertFlatFilesToFileTree(), findFileInTree(), BuilderPage(), convertFlatFilesToFileTree(), findFileInTree(), ProjectsPage() (+29 more)
+Cohesion: 0.07
+Nodes (53): AppEditorPage(), load(), convertFlatFilesToFileTree(), findFileInTree(), BuilderPage(), convertFlatFilesToFileTree(), findFileInTree(), ProjectsPage() (+45 more)
 
 ### Community 2 - "sandbox.ts"
-Cohesion: 0.05
-Nodes (70): maxDuration, POST(), runtime, dynamic, POST(), dynamic, POST(), dynamic (+62 more)
+Cohesion: 0.08
+Nodes (41): dynamic, POST(), dynamic, POST(), dynamic, POST(), dynamic, handleProxy() (+33 more)
 
 ### Community 3 - "hugeicons.tsx"
-Cohesion: 0.06
-Nodes (35): ArrowDown, ArrowUp, ArrowUpRight, BarChart3, Brain, CheckCheck, CornerDownLeft, createHugeIcon() (+27 more)
+Cohesion: 0.05
+Nodes (41): ArrowDown, ArrowUp, ArrowUpRight, BarChart3, Brain, CheckCheck, Columns, CornerDownLeft (+33 more)
 
 ### Community 4 - "2. Critical Security Vulnerabilities"
 Cohesion: 0.06
@@ -165,7 +198,7 @@ Nodes (31): 1. Executive Summary & REA Analysis Methodology, 2.1 Unauthenticated
 
 ### Community 5 - "getAdminDb"
 Cohesion: 0.06
-Nodes (54): dynamic, GET(), POST(), runtime, DELETE(), dynamic, GET(), PUT() (+46 more)
+Nodes (57): dynamic, GET(), POST(), runtime, POST(), DELETE(), dynamic, GET() (+49 more)
 
 ### Community 6 - "dependencies"
 Cohesion: 0.06
@@ -176,12 +209,12 @@ Cohesion: 0.07
 Nodes (29): declarations.d.ts, dom, dom.iterable, esnext, .next/dev/types/**/*.ts, next-env.d.ts, .next/types/**/*.ts, node_modules (+21 more)
 
 ### Community 8 - "WorkbenchHeader.tsx"
-Cohesion: 0.07
-Nodes (43): Template, TEMPLATES, TemplatesPage(), BlockItem, BLOCKS, ComponentInserterModalProps, WorkbenchHeaderProps, CommandItem (+35 more)
+Cohesion: 0.13
+Nodes (26): BlockItem, BLOCKS, ComponentInserterModalProps, WorkbenchHeaderProps, CommandItem, CommandPaletteProps, Check, ChevronDown (+18 more)
 
 ### Community 9 - "devDependencies"
-Cohesion: 0.07
-Nodes (28): autoprefixer, eslint, eslint-config-next, devDependencies, autoprefixer, eslint, eslint-config-next, postcss (+20 more)
+Cohesion: 0.06
+Nodes (30): autoprefixer, eslint, eslint-config-next, devDependencies, autoprefixer, eslint, eslint-config-next, postcss (+22 more)
 
 ### Community 10 - "declarations.d.ts"
 Cohesion: 0.11
@@ -192,28 +225,28 @@ Cohesion: 0.11
 Nodes (17): background_color, categories, description, display, icons, lang, name, orientation (+9 more)
 
 ### Community 12 - "cn"
-Cohesion: 0.12
-Nodes (17): Avatar(), AvatarProps, Dropdown(), DropdownItem, DropdownProps, Panel(), PanelContent(), PanelFooter() (+9 more)
+Cohesion: 0.15
+Nodes (13): Dropdown(), DropdownItem, DropdownProps, Panel(), PanelContent(), PanelFooter(), PanelHeader(), PanelProps (+5 more)
 
 ### Community 13 - "deployments/page.tsx"
-Cohesion: 0.14
-Nodes (12): Deployment, DEPLOYMENTS, DnsRecord, EnvVar, INITIAL_DNS_RECORDS, INITIAL_ENV_VARS, AlertCircle, Clock (+4 more)
+Cohesion: 0.13
+Nodes (13): Deployment, DEPLOYMENTS, DnsRecord, EnvVar, INITIAL_DNS_RECORDS, INITIAL_ENV_VARS, AlertCircle, Clock (+5 more)
 
 ### Community 14 - "Agent tasks"
 Cohesion: 0.09
 Nodes (22): A1 — Read-only audit → `docs/security/phase-0-audit.md`, A2 — Repo hygiene, A3 — Env validation (`lib/env.ts`, `lib/env.server.ts`), A4 — Lock down the admin client, A5 — RLS audit script (`supabase/verification/rls_audit.sql`), A6 — Prevent recurrence, A7 — E2B sandbox exposure review, Acceptance criteria (+14 more)
 
-### Community 15 - "login/page.tsx"
-Cohesion: 0.10
-Nodes (29): jetbrainsMono, metadata, plusJakartaSans, LoginPage(), clearMessages(), handleEmailAuth(), handleGithubSignIn(), handleGoogleSignIn() (+21 more)
+### Community 15 - "AuthProvider"
+Cohesion: 0.13
+Nodes (24): jetbrainsMono, metadata, plusJakartaSans, LoginPage(), clearMessages(), handleEmailAuth(), handleGithubSignIn(), handleGoogleSignIn() (+16 more)
 
 ### Community 16 - "firebase.ts"
 Cohesion: 0.15
 Nodes (6): app, auth, db, firebaseConfig, githubProvider, googleProvider
 
-### Community 17 - "Zap"
-Cohesion: 0.08
-Nodes (12): metadata, metadata, metadata, metadata, ArrowLeft, CheckCircle2, Cookie, Scale (+4 more)
+### Community 17 - "privacy/page.tsx"
+Cohesion: 0.15
+Nodes (5): metadata, metadata, ArrowLeft, Scale, ShieldCheck
 
 ### Community 18 - "6A tasks"
 Cohesion: 0.09
@@ -235,13 +268,25 @@ Nodes (15): [0.1.3](https://github.com/supabase/agent-skills/compare/v0.1.2...v0
 Cohesion: 0.12
 Nodes (15): 1. Concrete Transformation Patterns, 2. Error-First Structure, 3. Quantified Impact, 4. Self-Contained Examples, 5. Semantic Naming, Code Example Standards, Comments, Impact Level Guidelines (+7 more)
 
-### Community 25 - "MobileAppBuildModal.tsx"
-Cohesion: 0.17
-Nodes (13): AuthRequiredModal(), AuthRequiredModalProps, ExportDeployModal(), ExportDeployModalProps, MobileAppBuildModal(), MobileAppBuildModalProps, Modal(), ModalProps (+5 more)
+### Community 24 - "orchestrator.ts"
+Cohesion: 0.08
+Nodes (40): maxDuration, runtime, generateFileContent(), getCodegenSystemPrompt(), stripMarkdownFences(), attemptFix(), DebuggerResult, FileFix (+32 more)
+
+### Community 25 - "ExportDeployModal.tsx"
+Cohesion: 0.24
+Nodes (7): ExportDeployModalProps, StitchKeyModalProps, Modal(), ModalProps, TabItem, Tabs(), TabsProps
 
 ### Community 31 - "FileTreeExplorer.tsx"
 Cohesion: 0.15
 Nodes (13): countFiles(), FileTreeExplorer(), FileTreeExplorerProps, ChevronRight, Edit2, FileJson, FilePlus, FileText (+5 more)
+
+### Community 32 - "preview/page.tsx"
+Cohesion: 0.17
+Nodes (10): PreviewFile, StandalonePreviewContent(), ChevronUp, Copy, Globe, Monitor, RotateCw, Share2 (+2 more)
+
+### Community 33 - "acceptable-use/page.tsx"
+Cohesion: 0.25
+Nodes (4): metadata, CheckCircle2, ShieldAlert, XCircle
 
 ### Community 34 - "Section Definitions"
 Cohesion: 0.20
@@ -259,45 +304,45 @@ Nodes (5): BYT — Agent Operating Rules, Conventions, Definition of done (every
 Cohesion: 0.33
 Nodes (5): How to Use, References, Rule Categories by Priority, Supabase Postgres Best Practices, When to Apply
 
+### Community 99 - "Microservices & Domain-Driven Design (DDD)"
+Cohesion: 0.50
+Nodes (3): Architecture Checklist, Core Principles, Microservices & Domain-Driven Design (DDD)
+
 ### Community 100 - "supabase/types.ts"
 Cohesion: 0.13
 Nodes (14): CompositeTypes, Constants, Database, DatabaseWithoutInternals, DefaultSchema, Deployment, Enums, Json (+6 more)
 
 ### Community 101 - "TerminalDrawer.tsx"
-Cohesion: 0.10
-Nodes (20): PreviewFile, StandalonePreviewContent(), INITIAL_LOGS, TerminalDrawerProps, AlertTriangle, Box, ChevronDown, ChevronUp (+12 more)
+Cohesion: 0.13
+Nodes (14): INITIAL_LOGS, TerminalDrawerProps, AlertTriangle, Box, Command, createHugeIcon(), Loader2, Maximize2 (+6 more)
 
 ### Community 102 - "ChatSidebar.tsx"
-Cohesion: 0.15
-Nodes (12): ActivityStreamer(), ChatSidebarProps, DEFAULT_SUGGESTIONS, Copy, Cpu, Download, FileCode2, Mic (+4 more)
+Cohesion: 0.10
+Nodes (18): ActivityStreamer(), ChatSidebarProps, DEFAULT_SUGGESTIONS, INITIAL_MESSAGES, Message, SUGGESTIONS, Bot, Cpu (+10 more)
 
 ### Community 103 - "projects/page.tsx"
-Cohesion: 0.21
-Nodes (12): INITIAL_PROJECTS, Project, StitchKeyModal(), StitchKeyModalProps, Card(), CardContent(), CardDescription(), CardFooter() (+4 more)
-
-### Community 110 - "proxy.ts"
-Cohesion: 0.50
-Nodes (4): config, decodeJwtPayload(), middleware, proxy()
+Cohesion: 0.19
+Nodes (16): INITIAL_PROJECTS, Project, Template, TEMPLATES, TemplatesPage(), ArrowRight, Code2, ExternalLink (+8 more)
 
 ## Knowledge Gaps
-- **444 isolated node(s):** `extends`, `next/core-web-vitals`, `Deployment`, `EnvVar`, `DEPLOYMENTS` (+439 more)
+- **484 isolated node(s):** `extends`, `next/core-web-vitals`, `Deployment`, `EnvVar`, `DEPLOYMENTS` (+479 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **64 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **94 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `verifySessionCookie()` connect `getAdminDb` to `sandbox.ts`?**
-  _High betweenness centrality (0.038) - this node is a cross-community bridge._
-- **Why does `getAdminDb()` connect `getAdminDb` to `sandbox.ts`?**
-  _High betweenness centrality (0.037) - this node is a cross-community bridge._
-- **Why does `cn()` connect `cn` to `badge.tsx`, `MobileAppBuildModal.tsx`, `projects/page.tsx`?**
-  _High betweenness centrality (0.019) - this node is a cross-community bridge._
+- **Why does `verifySessionCookie()` connect `getAdminDb` to `orchestrator.ts`, `sandbox.ts`?**
+  _High betweenness centrality (0.049) - this node is a cross-community bridge._
+- **Why does `getAdminDb()` connect `getAdminDb` to `orchestrator.ts`?**
+  _High betweenness centrality (0.036) - this node is a cross-community bridge._
+- **Why does `Badge()` connect `badge.tsx` to `preview/page.tsx`, `(dashboard)/page.tsx`, `TerminalDrawer.tsx`, `ChatSidebar.tsx`, `projects/page.tsx`, `WorkbenchHeader.tsx`, `cn`, `deployments/page.tsx`, `ExportDeployModal.tsx`, `FileTreeExplorer.tsx`?**
+  _High betweenness centrality (0.009) - this node is a cross-community bridge._
 - **What connects `extends`, `next/core-web-vitals`, `Deployment` to the rest of the system?**
-  _444 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _484 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `badge.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.0907563025210084 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.13333333333333333 - nodes in this community are weakly interconnected._
 - **Should `(dashboard)/page.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.11627906976744186 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07307692307692308 - nodes in this community are weakly interconnected._
 - **Should `sandbox.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.05088919288645691 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07993197278911565 - nodes in this community are weakly interconnected._

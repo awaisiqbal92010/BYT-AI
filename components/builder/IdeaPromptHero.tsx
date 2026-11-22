@@ -321,7 +321,7 @@ export function IdeaPromptHero({
                       e.preventDefault();
                       handleSubmit();
                     }}
-                    disabled={(!promptInput.trim() && !textareaRef.current?.value?.trim()) || isGenerating}
+                    disabled={!promptInput.trim() || isGenerating}
                     className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-semibold text-primary-foreground shadow-md shadow-primary/25 hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                   >
                     {isGenerating ? (

@@ -37,6 +37,14 @@ export async function POST(request: NextRequest) {
     const decoded = await verifySessionCookie(cookie);
     const uid = decoded?.uid ?? null;
 
+    // SECURITY: Require authenticated user for sandbox command execution
+    if (!uid) {
+      return NextResponse.json(
+        { success: false, error: { code: "AUTH_REQUIRED", message: "Authentication required to execute sandbox commands." } },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const command = body?.command;
     const sandboxId = body?.sandboxId;

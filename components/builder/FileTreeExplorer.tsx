@@ -26,6 +26,7 @@ import {
 } from "@/components/icons/hugeicons";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
+import { FileIcon } from "./FileIcons";
 
 export interface FileItem {
   id: string;
@@ -136,38 +137,14 @@ export function FileTreeExplorer({
   };
 
   const getFileIcon = (file: FileItem) => {
-    if (file.type === "folder") {
-      return openFolders[file.path] ? (
-        <FolderOpen className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-      ) : (
-        <Folder className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-      );
-    }
-
-    const name = file.name.toLowerCase();
-
-    if (name === "app.json" || name === "eas.json") {
-      return <Smartphone className="h-3.5 w-3.5 text-purple-400 shrink-0" />;
-    }
-    if (name.includes("vite.config") || name.includes("next.config") || name.includes("metro.config")) {
-      return <Settings className="h-3.5 w-3.5 text-emerald-400 shrink-0" />;
-    }
-    if (name.endsWith(".tsx") || name.endsWith(".jsx")) {
-      return <FileCode2 className="h-3.5 w-3.5 text-cyan-400 shrink-0" />;
-    }
-    if (name.endsWith(".ts") || name.endsWith(".js")) {
-      return <FileCode2 className="h-3.5 w-3.5 text-blue-400 shrink-0" />;
-    }
-    if (name.endsWith(".css")) {
-      return <Palette className="h-3.5 w-3.5 text-pink-400 shrink-0" />;
-    }
-    if (name.endsWith(".json")) {
-      return <FileJson className="h-3.5 w-3.5 text-amber-400 shrink-0" />;
-    }
-    if (name.endsWith(".html")) {
-      return <Globe className="h-3.5 w-3.5 text-orange-400 shrink-0" />;
-    }
-    return <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />;
+    return (
+      <FileIcon
+        filename={file.name}
+        isFolder={file.type === "folder"}
+        isOpen={Boolean(openFolders[file.path])}
+        className="h-3.5 w-3.5"
+      />
+    );
   };
 
   const handleCreateSubmit = (e: React.FormEvent) => {

@@ -23,6 +23,14 @@ export async function POST(request: NextRequest) {
     const decoded = await verifySessionCookie(cookie);
     const uid = decoded?.uid ?? null;
 
+    // SECURITY: Require authenticated user for Appetize builds
+    if (!uid) {
+      return NextResponse.json(
+        { error: { code: "AUTH_REQUIRED", message: "Authentication required to trigger Appetize builds." } },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
     const {
       projectName = "byt-expo-app",

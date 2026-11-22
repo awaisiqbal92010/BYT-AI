@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrCreateActiveSandbox, getPortForFramework } from "@/lib/sandbox";
+import { verifySessionCookie } from "@/lib/firebase/admin";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,6 +18,16 @@ async function handleProxy(
   context: { params: Promise<{ id: string; path?: string[] }> }
 ) {
   try {
+    // SECURITY: Require authenticated user for sandbox proxy access
+    const cookie = request.cookies.get("session")?.value;
+    const decoded = await verifySessionCookie(cookie);
+    if (!decoded?.uid) {
+      return NextResponse.json(
+        { error: { code: "AUTH_REQUIRED", message: "Authentication required." } },
+        { status: 401 }
+      );
+    }
+
     const { id: sandboxId, path: pathSegments = [] } = await context.params;
 
     if (!sandboxId || !/^[a-zA-Z0-9_-]+$/.test(sandboxId)) {

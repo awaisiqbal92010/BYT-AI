@@ -301,13 +301,33 @@ export function LivePreviewSandbox({
               // Main Application Entry
               ${sanitizeSource(appFile.content)}
 
-              const ResolvedComponent =
-                (typeof Home !== 'undefined' ? Home :
-                 typeof App !== 'undefined' ? App :
-                 typeof NexusLanding !== 'undefined' ? NexusLanding :
-                 typeof Main !== 'undefined' ? Main :
-                 typeof Portfolio !== 'undefined' ? Portfolio :
-                 () => <div className="p-8 text-center text-zinc-400">Loading Application...</div>);
+              // Universal Root Component Resolution
+              // Dynamically find the last declared component function/class
+              const __BYT_COMPONENT_CANDIDATES__ = [];
+              const __BYT_KNOWN_NAMES__ = [
+                'Home', 'App', 'Main', 'Page', 'Root', 'Index', 'Layout',
+                'NexusLanding', 'Portfolio', 'Dashboard', 'Landing',
+                'Hero', 'Application', 'Container', 'Wrapper',
+              ];
+              for (const name of __BYT_KNOWN_NAMES__) {
+                try {
+                  const ref = eval(name);
+                  if (typeof ref === 'function') __BYT_COMPONENT_CANDIDATES__.push(ref);
+                } catch {}
+              }
+
+              // Fallback: scan window for any React-style PascalCase function
+              if (__BYT_COMPONENT_CANDIDATES__.length === 0) {
+                for (const key of Object.keys(window)) {
+                  if (/^[A-Z][a-zA-Z0-9]+$/.test(key) && typeof window[key] === 'function') {
+                    __BYT_COMPONENT_CANDIDATES__.push(window[key]);
+                  }
+                }
+              }
+
+              const ResolvedComponent = __BYT_COMPONENT_CANDIDATES__.length > 0
+                ? __BYT_COMPONENT_CANDIDATES__[__BYT_COMPONENT_CANDIDATES__.length - 1]
+                : () => <div className="p-8 text-center text-zinc-400">Loading Application...</div>;
 
               const root = ReactDOM.createRoot(document.getElementById('root'));
               root.render(<ResolvedComponent />);
