@@ -14,7 +14,7 @@ import { getFirestore } from "firebase/firestore";
 import { getAnalytics, isSupported, logEvent } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDummyKeyForFallbackPreview000000",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "byt----build-your-thoughts.firebaseapp.com",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "byt----build-your-thoughts",
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "byt----build-your-thoughts.appspot.com",

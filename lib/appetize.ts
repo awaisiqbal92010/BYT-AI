@@ -1,5 +1,3 @@
-import "server-only";
-
 /**
  * Appetize.io Server-Side API Client
  *
