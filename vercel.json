@@ -4,20 +4,16 @@
   "buildCommand": "npm run build",
   "functions": {
     "app/api/generate/route.ts": {
-      "maxDuration": 300,
-      "memory": 1024
+      "maxDuration": 300
     },
     "app/api/sandbox/proxy/[id]/[[...path]]/route.ts": {
-      "maxDuration": 60,
-      "memory": 512
+      "maxDuration": 60
     },
     "app/api/appetize/build/route.ts": {
-      "maxDuration": 120,
-      "memory": 512
+      "maxDuration": 120
     },
     "app/api/projects/route.ts": {
-      "maxDuration": 30,
-      "memory": 512
+      "maxDuration": 30
     }
   }
 }
