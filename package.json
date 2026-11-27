@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "tsx tests/sandbox-tests.ts",
-    "deploy:vercel": "npx vercel --prod",
+    "deploy:vercel": "node scripts/deploy-vercel.cjs --prod",
     "deploy:cloudflare": "wrangler deploy"
   },
   "dependencies": {
