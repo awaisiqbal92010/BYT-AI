@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Private routes requiring authentication
@@ -39,7 +39,8 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-export default middleware;
+export { proxy as middleware };
+export default proxy;
 
 export const config = {
   matcher: [
